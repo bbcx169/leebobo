@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>李伯伯糖葫蘆 Uncle Lee's Tanghulu</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                colors: { amberRed: '#A52A2A', warmWood: '#D2B48C', creamBg: '#FAF7F2', pureWhite: '#FFFFFF', darkWood: '#3E2723' },
+                fontFamily: { serif: ['"Noto Serif TC"', 'serif'], sans: ['"Noto Sans TC"', 'sans-serif'] },
+                keyframes: {
+                    sway: { '0%, 100%': { transform: 'rotate(0deg)' }, '25%': { transform: 'rotate(-6deg)' }, '50%': { transform: 'rotate(0deg)' }, '75%': { transform: 'rotate(6deg)' } }
+                },
+                animation: { sway: 'sway 4s ease-in-out infinite' }
+            }
+        }
+    }
+  </script>
+
+  <!-- 已移除易造成崩潰的 html2pdf.js 函式庫 -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body { font-family: 'Noto Sans TC', sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar, ::-webkit-scrollbar { width: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-track, ::-webkit-scrollbar-track { background: #FAF7F2; }
+    .custom-scrollbar::-webkit-scrollbar-thumb, ::-webkit-scrollbar-thumb { background: #D2B48C; border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover, ::-webkit-scrollbar-thumb:hover { background: #A52A2A; }
+    .glass-panel-light { background: rgba(250, 247, 242, 0.7); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05); }
+    .glass-nav-scrolled { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05); }
+    .bg-traditional-pattern { background-color: #FAF7F2; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M54 48v-6h-6v6h-6V24H18v18h-6v6h6v6h6V36h24v18h6v-6h-6v-6h-6zM18 12V6h6V0h6v24H6v-6h12zM6 48v-6h6v-6H0v6h6zM42 6V0h-6v18h24v-6H42V6z' fill='%23d2b48c' fill-opacity='0.12'/%3E%3C/svg%3E"); }
+    .bg-wood-texture { background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.05' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noise)' opacity='0.05'/%3E%3C/svg%3E"); }
+    .fade-in-up { opacity: 0; transform: translateY(30px); transition: opacity 1s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 1s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+    .fade-in-up.is-visible { opacity: 1; transform: translateY(0); }
+    .img-zoom { transition: transform 0.8s ease; }
+    .img-container:hover .img-zoom { transform: scale(1.04); }
+    iframe { border-radius: 2rem; }
+    ::placeholder { color: #a8a29e; opacity: 1; }
+    ::-ms-input-placeholder { color: #a8a29e; }
+  </style>
+</head>
+<body class="bg-creamBg text-darkWood font-sans antialiased selection:bg-amberRed selection:text-white">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzf8kJ6Ka8yGabg--MCRJ8eyucBbsGRDbceGEeH-CQDLqOMXhTCysZVrPKL0MLpSg4L/exec';
+
+    const products = [
+      { id: 1, name: '蕃茄 (小/喜糖)', price: 20, tags: ['婚禮小物', '小巧可愛'], description: '飽滿紅番茄裹上晶瑩糖漿，這份「永結同心」糖葫蘆，將甜蜜祝福封存。紅心貼紙耀眼奪目，寓意新人幸福圓滿。願每一對新人愛情如蜜，永結同心。', image: 'https://lh3.googleusercontent.com/d/1wKiFdk5B--qTiH3W6oMMXNr3C7iJpvM5?auto=format&fit=crop&q=80&w=400' },
+      { id: 2, name: '蕃茄蜜餞 (小/喜糖)', price: 25, tags: ['婚禮小物', '酸甜夾心'], description: '「甜蜜相伴」囍悅伴手禮，精選古早味糖葫蘆，囍字紅心裹住溫馨。紅果黑棗冰糖，多層次美味。願新人一生，皆是蜜意相伴。', image: 'https://lh3.googleusercontent.com/d/1xCGWybb12VcnylRQOCPAOJUqOlqLEyAn?auto=format&fit=crop&q=80&w=400' },
+      { id: 3, name: '鳥梨 (小/喜糖)', price: 20, tags: ['婚禮小物', '傳統風味', '季節限定'], description: '選用圓潤晶瑩的糖葫蘆，象徵生活圓滿、幸福長久。外層脆糖如蜜，裹住酸甜果實，每一口都是愛情的滋味。讓這份「鸞鳳和鳴」的經典雅致，伴隨賓客分享新人的喜悅，延續最真摯的甜蜜約定。', image: 'https://lh3.googleusercontent.com/d/17ECaO0J7Skz9DJCpTHJ2rbIJTXL10NJ1?auto=format&fit=crop&q=80&w=400' },
+      { id: 4, name: '蕃茄+鳥梨 (小/喜糖)', price: 20, tags: ['婚禮小物', '雙重享受', '季節限定'], description: '一顆蕃茄搭配一顆鳥梨，兩種經典口味一次擁有。將紅通通的番茄與圓潤鳥梨包裹在琥珀色的糖霜中，象徵「佳偶天成」。以此傳遞圓滿的喜悅，感謝賓客與我們共度這份如糖般珍貴的幸福時刻。', image: 'https://lh3.googleusercontent.com/d/1U9dZfNU9iUQp30qPTb7uaZD6rcHjPKc0?auto=format&fit=crop&q=80&w=400' },
+      { id: 5, name: '承租掃帚', price: 2000, tags: ['特色造型', '喜慶'], description: '可承租掃帚(只租不賣)保護套+掃帚為一組\n掃帚上僅可插糖葫蘆，請勿插置其他物品避免損壞\n竹稻草租金$200元 / 押金$1800元\n※歸還時若發現(保護套+掃帚)其一有毀損，則扣$1000元', image: 'https://lh3.googleusercontent.com/d/1HXXgcdfFFvIwCNEF4ETVKYwK6gYA39Tt?auto=format&fit=crop&q=80&w=400' },
+      { id: 6, name: '蕃茄', price: 30, tags: ['經典必吃'], description: '傳承古法手工熬製，金黃糖衣薄脆不黏牙，包裹優選鮮果，口口香甜多汁。完美呈現外脆內軟的經典滋味，快來攤位帶走這份紅亮誘人的傳統甜蜜！', image: 'https://lh3.googleusercontent.com/d/1HGqX5CBSbDzPfTpm7eJ4BasLfUOSy8Sc?auto=format&fit=crop&q=80&w=400' },
+      { id: 7, name: '蕃茄蜜餞', price: 35, tags: ['人氣首選'], description: '古法熬製糖衣薄脆不黏牙，包裹多汁蕃茄與鹹甜蜜餞。咬下瞬間，金黃糖衣與鮮果層次迸發，酸甜解膩且外脆內軟。這份傳承傳統的手工滋味，是絕不能錯過的紅亮誘惑，快來攤位品嚐！', image: 'https://lh3.googleusercontent.com/d/1FTgNOznOCkeVxHzOsFfTX9kFnGdXgDv1?auto=format&fit=crop&q=80&w=400' },
+      { id: 8, name: '鳥梨', price: 35, tags: ['傳統風味', '季節限定'], description: '重溫夜市經典！嚴選優質鳥梨，遵循古法手工熬製糖衣，金黃外殼亮麗酥脆，果肉酸甜回甘且質地軟嫩。咬下一口，讓這份最道地的傳統風味，帶您回味童年園遊會的單純美好！', image: 'https://lh3.googleusercontent.com/d/146FTkRZCHmSgH3RKanKy4xMvErZoRWt-?auto=format&fit=crop&q=80&w=400' }
+    ];
+
+    const getMinDate = () => {
+      const today = new Date();
+      const futureDate = new Date(today);
+      futureDate.setDate(today.getDate() + 14);
+      return futureDate.toISOString().split('T')[0];
+    };
+
+    const initialFormData = {
+      eventType: '', ordererName: '', ordererPhone: '', ordererEmail: '', recipientName: '', recipientPhone: '',
+      deliveryCity: '', weddingDate: '', weddingTime: '', weddingRestaurant: '', weddingHall: '',
+      weddingAddress: '', groomName: '', groomPhone: '', brideName: '', bridePhone: '',
+      generalDate: '', generalTime: '', generalLocation: '', generalAddress: '', notes: ''
+    };
+
+    function useScrollFadeIn(dependencies = []) {
+        useEffect(() => {
+            const observer = new IntersectionObserver((entries, obs) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        obs.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.05 });
+            const timer = setTimeout(() => {
+                const elements = document.querySelectorAll('.fade-in-up');
+                elements.forEach(el => {
+                    if(!el.classList.contains('is-visible')) {
+                        const rect = el.getBoundingClientRect();
+                        if (rect.top < window.innerHeight && rect.bottom > 0) el.classList.add('is-visible');
+                        else observer.observe(el);
+                    }
+                });
+            }, 100);
+            return () => { clearTimeout(timer); observer.disconnect(); };
+        }, dependencies);
+    }
+
+    const Footer = () => (
+        <footer className="bg-traditional-pattern relative text-darkWood py-12 border-t border-warmWood/40 shadow-inner mt-auto">
+            <div className="absolute inset-0 bg-pureWhite/50 pointer-events-none"></div>
+            <div className="relative z-10 max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+                <div className="lg:col-span-5 text-center lg:text-left space-y-5">
+                    <h4 className="font-serif text-xl text-amberRed tracking-widest font-bold">寧夏夜市古早味糖葫蘆</h4>
+                    <ul className="space-y-4 text-darkWood/80 font-sans text-sm md:text-base">
+                        <li className="flex items-start justify-center lg:justify-start gap-3">
+                            <span className="mt-1.5 inline-block w-2.5 h-2.5 rounded-full bg-warmWood shrink-0"></span>
+                            <span className="text-left">地址：臺北市大同區寧夏夜市第61號攤位<br/>(蓬萊國小前)</span>
+                        </li>
+                        <li className="flex items-center justify-center lg:justify-start gap-3">
+                            <span className="inline-block w-2.5 h-2.5 rounded-full bg-warmWood shrink-0"></span>
+                            <span>聯絡電話：0912-294-022</span>
+                        </li>
+                        <li className="flex items-center justify-center lg:justify-start gap-3">
+                            <span className="inline-block w-2.5 h-2.5 rounded-full bg-warmWood shrink-0"></span>
+                            <span>營業時間：18:00 ~ 23:00</span>
+                        </li>
+                    </ul>
+                </div>
+                <div className="lg:col-span-7 flex flex-wrap justify-center lg:justify-end items-center gap-6 lg:gap-10">
+                    <a href="https://line.me/R/ti/p/@687vjdlz?oat_content=url&ts=04100108" target="_blank" rel="noopener noreferrer" className="block hover:scale-105 transition-transform duration-300">
+                        <img src="https://lh3.googleusercontent.com/d/1GqMTDC4ULAb1RNPr53PogznTrU0KXhYv" alt="LINE 官方帳號" className="w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 object-contain rounded-xl drop-shadow-md" loading="lazy" />
+                    </a>
+                    <a href="https://www.facebook.com/ningxia.tanghulu" target="_blank" rel="noopener noreferrer" className="block hover:scale-105 transition-transform duration-300">
+                        <img src="https://lh3.googleusercontent.com/d/1nxPwGWyyNUl9EuxSJtsLiQrVrKIck5lN" alt="Facebook 粉絲專頁" className="w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 object-contain rounded-xl drop-shadow-md" loading="lazy" />
+                    </a>
+                    <a href="https://www.facebook.com/profile.php?id=100057620284780" target="_blank" rel="noopener noreferrer" className="block hover:scale-105 transition-transform duration-300">
+                        <img src="https://lh3.googleusercontent.com/d/1ZggCQXDqt_C03167yXBHbC_kCR4l4zNn" alt="寧夏夜市" className="w-20 h-20 md:w-24 md:h-24 lg:w-28 lg:h-28 object-contain" loading="lazy" />
+                    </a>
+                    <a href="https://bbcx169.github.io/leebobo-admin/" target="_blank" rel="noopener noreferrer" className="block hover:scale-105 transition-transform duration-300">
+                        <img src="https://lh3.googleusercontent.com/d/1FiL_MyRh9OVN4h_LoEBa2BA-pwQw-Fv5" alt="冰糖璃" className="h-20 md:h-24 lg:h-28 w-auto object-contain drop-shadow-md" loading="lazy" />
+                    </a>
+                </div>
+            </div>
+            <div className="relative z-10 max-w-7xl mx-auto px-6 mt-12 text-center text-xs font-sans text-darkWood/60">
+                Copyright © 2026 冰糖璃工作室. All Rights Reserved.
+            </div>
+        </footer>
+    );
+
+    const BrandStory = ({ navigateTo }) => {
+        useScrollFadeIn();
+        return (
+            <div className="relative overflow-hidden w-full">
+                <header className="relative flex flex-col md:flex-row min-h-screen bg-creamBg overflow-hidden">
+                    <div className="w-full md:w-[45%] flex flex-col justify-center px-8 md:px-16 lg:px-24 pt-32 md:pt-0 relative z-10">
+                        <div className="absolute left-0 bottom-1/4 w-64 h-64 bg-warmWood opacity-10 rounded-tr-full rounded-br-full z-0 pointer-events-none transform -translate-x-1/2"></div>
+                        <div className="absolute right-10 top-1/4 w-32 h-32 bg-amberRed opacity-5 rounded-full z-0 pointer-events-none"></div>
+
+                        <div className="relative z-10 fade-in-up">
+                            <p className="text-warmWood font-sans tracking-[0.3em] text-sm md:text-base mb-6 font-semibold uppercase">Modern Heritage</p>
+                            <h1 className="text-5xl lg:text-6xl xl:text-7xl font-serif font-bold text-amberRed mb-8 leading-[1.1] tracking-wide">一串晶瑩<br/>半生守候</h1>
+                            <div className="w-16 h-1 bg-warmWood mb-8 rounded-full"></div>
+                            <p className="text-darkWood/80 font-sans font-light text-lg md:text-xl leading-relaxed tracking-wide max-w-sm">源自寧夏夜市的職人堅持。<br/>每一抹琥珀色的糖衣，都是歲月淬鍊的甜蜜記憶。</p>
+                            <div className="mt-12 flex items-center space-x-4 cursor-pointer group" onClick={() => window.scrollTo({top: window.innerHeight, behavior: 'smooth'})}>
+                                <span className="text-amberRed font-serif tracking-widest text-sm group-hover:text-darkWood transition-colors duration-300">探索故事</span>
+                                <div className="w-10 h-10 rounded-full border border-amberRed flex items-center justify-center group-hover:bg-amberRed group-hover:text-white transition-all duration-300 text-amberRed">
+                                    <svg className="w-4 h-4 transform group-hover:translate-y-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="w-full md:w-[55%] h-[60vh] md:h-screen relative mt-12 md:mt-0">
+                        <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-creamBg to-transparent z-10 hidden md:block"></div>
+                        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-creamBg to-transparent z-10 md:hidden"></div>
+                        <img src="https://lh3.googleusercontent.com/d/18clnygnDNhTIXJ-o-ZzOo-27iEjmcLYF?q=80&w=1200&auto=format&fit=crop" alt="職人熬糖意象" className="w-full h-full object-cover object-center" style={{filter: 'brightness(1.05) contrast(1.05) saturate(1.1)'}} fetchpriority="high" />
+                        <div className="absolute bottom-8 right-8 glass-panel-light p-4 rounded-xl hidden md:block">
+                            <p className="text-darkWood font-serif text-sm tracking-widest">純砂糖 / 慢火熬</p>
+                        </div>
+                    </div>
+                </header>
+
+                <section className="max-w-7xl mx-auto px-6 py-16 md:py-24">
+                    <div className="flex flex-col-reverse md:flex-row items-center gap-12 lg:gap-20">
+                        <div className="w-full md:w-5/12 fade-in-up space-y-6">
+                            <div className="inline-block px-4 py-1 border border-warmWood text-warmWood font-serif tracking-widest rounded-full text-sm">Origin</div>
+                            <h2 className="text-3xl md:text-4xl font-serif font-bold text-darkWood leading-snug">繁華流轉中的<br/><span className="text-amberRed">溫暖燈火</span></h2>
+                            <p className="font-sans text-darkWood/70 leading-loose text-lg font-light text-justify">走進台北寧夏夜市，在鼎沸的人聲與璀璨的霓虹中，總有一處散發著溫潤琥珀光芒的角落。那是「李伯伯糖葫蘆」最初的起點。</p>
+                            <p className="font-sans text-darkWood/70 leading-loose text-lg font-light text-justify">五十年前，一輛質樸的手推車，一鍋慢火熬煮的砂糖。我們不僅僅是在販售甜點，更是在這座喧囂的城市裡，為每一個歸人保留一份純粹、質樸的童年回憶。</p>
+                        </div>
+                        <div className="w-full md:w-7/12 img-container rounded-[2rem] overflow-hidden shadow-xl fade-in-up relative">
+                            <img src="https://lh3.googleusercontent.com/d/1_UwCqDl1yNvCcuPSLAjt9aK1MQTuxeKz?q=80&w=1000&auto=format&fit=crop" alt="寧夏夜市的溫暖燈火" className="w-full h-[450px] object-cover img-zoom" loading="lazy" />
+                        </div>
+                    </div>
+                </section>
+
+                <section className="bg-pureWhite py-16 md:py-24">
+                    <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center gap-12 lg:gap-20">
+                        <div className="w-full md:w-6/12 img-container rounded-[2rem] overflow-hidden shadow-xl fade-in-up relative">
+                            <img src="https://lh3.googleusercontent.com/d/1Z1ucLIv2_IovpQfRR0vL9VN0CM2Y4My0?q=80&w=1000&auto=format&fit=crop" alt="琥珀色糖葫蘆意象" className="w-full h-[550px] object-cover img-zoom" style={{filter: 'brightness(1.1) saturate(1.2)'}} loading="lazy" />
+                        </div>
+                        <div className="w-full md:w-6/12 fade-in-up space-y-6 md:pl-8">
+                            <div className="inline-block px-4 py-1 border border-amberRed text-amberRed font-serif tracking-widest rounded-full text-sm">Craftsmanship</div>
+                            <h2 className="text-3xl md:text-4xl font-serif font-bold text-darkWood leading-snug">職人李順慶的<br/><span className="text-amberRed">半生火候</span></h2>
+                            <blockquote className="border-l-4 border-warmWood pl-6 py-2 my-6">
+                                <p className="font-serif text-xl text-darkWood/80 italic leading-relaxed">「火候不到，糖會黏牙；火候過了，糖會發苦。做糖葫蘆，就像做人，講究的是剛剛好的分寸。」</p>
+                                <footer className="text-sm text-warmWood mt-3 tracking-widest">— 創辦人 李順慶</footer>
+                            </blockquote>
+                            <p className="font-sans text-darkWood/70 leading-loose text-lg font-light text-justify">嚴選在地新鮮果物，堅持傳統純糖熬製。李伯伯的手，佈滿了歲月與高溫留下的痕跡。那拉絲的琥珀色糖漿，在晨光與微光中閃爍，不僅裹住了鮮甜，更裹進了數十年如一日的匠心。</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="py-24 relative overflow-hidden bg-creamBg">
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] border-[1px] border-warmWood/20 rounded-full z-0"></div>
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border-[1px] border-amberRed/10 rounded-full z-0"></div>
+                    <div className="max-w-2xl mx-auto text-center px-6 relative z-10 fade-in-up">
+                        <p className="text-warmWood font-sans tracking-[0.2em] text-sm mb-4">TASTE THE MEMORY</p>
+                        <h3 className="text-3xl md:text-4xl font-serif font-bold text-amberRed mb-6">品嚐歲月熬煮的甜蜜</h3>
+                        <p className="text-darkWood/70 font-sans mb-10 text-lg font-light leading-relaxed">從寧夏夜市出發，結合現代美學。<br/>現在，我們將這份琥珀色的溫暖，送到您手中。</p>
+                        <button onClick={() => navigateTo('list')} className="inline-block bg-amberRed text-white font-serif tracking-widest px-10 py-4 rounded-full hover:bg-darkWood transition-colors duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">商品訂購</button>
+                    </div>
+                </section>
+            </div>
+        );
+    };
+
+    const OrderProcess = ({ navigateTo }) => {
+        useScrollFadeIn();
+        const [openFaqId, setOpenFaqId] = useState("cat-0-item-0");
+        
+        const timelineSteps = [
+            { id: 1, title: "挑選品項", desc: ["選擇經典或婚禮系列", "確認商品口味與數量"], icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg> },
+            { id: 2, title: "確認門檻", desc: ["最低起訂量 50 支", "活動日前 14 天預訂"], icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> },
+            { id: 3, title: "填寫資訊", desc: ["選擇您的活動類別", "填寫精確收貨與場地資訊"], icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg> },
+            { id: 4, title: "送出訂單", desc: ["確認總金額與運費", "系統自動生成 PDF 備份"], icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> },
+            { id: 5, title: "LINE 確認", desc: ["加入李伯伯官方 LINE", "傳送訂單編號進行確認"], icon: <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.036 9.608.391.084.922.258 1.057.592.122.303.079.778.039 1.085l-.171 1.027c-.053.303-.242 1.186 1.039.647 1.281-.54 6.911-4.069 9.428-6.967 1.739-1.907 2.572-3.843 2.572-5.992z"/></svg> }
+        ];
+
+        const faqCategories = [
+            { category: "📦 關於訂購規範", items: [{ q: "最低訂購數量是多少？", a: "為了維持職人熬糖的品質與新鮮度，單筆訂單糖葫蘆總數需達 50 支（不限口味組合）才予出貨。" }, { q: "我需要提前多久訂購？", a: "所有產品皆為接單後新鮮製作。請務必於活動日前 14 天完成預訂，以利職人備料。" }, { q: "送出訂單後如何確認是否成功？", a: "送出後系統會生成 PDF 明細，請務必點擊連結加入「LINE 官方帳號」告知訂單編號，待專人核對細節後訂單才正式成立。" }, { q: "可以更改訂購數量或口味嗎？", a: "若需調整請於活動日 7 天前透過 LINE 或 電話 聯繫。因 14 天內已進入備料階段，我們將盡力協助但不保證能修改。" }] },
+            { category: "🚚 配送與取貨", items: [{ q: "運費如何計算？", a: "臺北市與新北市：商品金額滿 $5,000 元享免運；未達門檻則酌收 $350 元運費。外縣市：目前受限於物流品質，暫不提供宅配，需由顧客配合自取。" }, { q: "可以指定精準的送達時間嗎？", a: "可選擇時段，但受路況影響，建議將收貨時間設定在活動開始前 1-2 小時，保留彈性緩衝。" }] },
+            { category: "❄️ 食用與保存", items: [{ q: "糖葫蘆可以保存多久？", a: "糖衣極易受濕度與溫度影響，我們堅持無添加。強烈建議在收貨後 2 小時內食用完畢口感最佳。" }, { q: "如果不立刻吃，該怎麼保存？", a: "請務必放入「冷藏」保存。注意：請勿放入冷凍庫，以免糖衣因溫差退冰而融化受潮。" }, { q: "李伯伯的糖葫蘆會黏牙嗎？", a: "不會。李伯伯堅持古法手工熬製糖漿，特點是糖衣「薄、脆、不黏牙」。" }] },
+            { category: "🌹 婚禮專屬：甜蜜常見問題", items: [{ q: "婚禮系列與一般款有什麼不同？", a: "婚禮系列專為喜宴設計，採用小巧好入口的「喜糖尺寸」，並賦予「永結同心」、「佳偶天成」等專屬寓意。" }, { q: "糖葫蘆有附包裝嗎？可以當二進禮嗎？", a: "有的。每支均附透明包裝與喜慶紅心貼紙，非常適合直接作為桌上禮或二進小禮使用。" }, { q: "什麼時間點收貨最合適？", a: "強烈建議將收貨時間設定在宴客開始前 2 小時，並請婚企人員協助先存放在冷藏環境。" }] }
+        ];
+
+        return (
+            <div className="relative z-10 container mx-auto px-4 sm:px-6 pt-32 pb-12 lg:pb-20 max-w-5xl">
+                <div className="fixed inset-0 z-[-1] pointer-events-none overflow-hidden">
+                    <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-[#D2B48C] rounded-full mix-blend-multiply filter blur-[100px] opacity-30 animate-pulse"></div>
+                    <div className="absolute inset-0 bg-wood-texture mix-blend-overlay opacity-40"></div>
+                </div>
+
+                <header className="text-center mb-12 fade-in-up">
+                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-amberRed mb-4 tracking-widest font-serif drop-shadow-sm">訂購流程</h1>
+                    <div className="mx-auto w-24 h-1.5 bg-warmWood rounded-full shadow-sm mb-6"></div>
+                    <p className="text-lg md:text-xl text-darkWood tracking-[0.15em] font-medium opacity-90">將寧夏夜市的甜蜜，原封不動送到您手中</p>
+                </header>
+
+                <div className="mb-16 transform transition-all hover:scale-[1.01] fade-in-up">
+                    <div className="bg-gradient-to-r from-[#A52A2A]/10 to-[#A52A2A]/5 border border-[#A52A2A]/30 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 shadow-sm backdrop-blur-md">
+                        <div className="w-14 h-14 md:w-16 md:h-16 shrink-0 bg-white border-2 border-[#A52A2A]/20 rounded-full flex items-center justify-center text-amberRed shadow-sm relative overflow-hidden">
+                            <svg className="w-7 h-7 md:w-8 md:h-8 relative z-10 animate-bounce text-amberRed" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M9 18h6"></path><path d="M10 22h4"></path><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path><path d="M12 2v2"></path><path d="M4 8h2"></path><path d="M18 8h2"></path><path d="M6 4l1 1"></path><path d="M18 4l-1 1"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-bold text-amberRed mb-2 font-serif">賞味溫馨小提醒</h3>
+                            <p className="text-gray-700 leading-relaxed">糖葫蘆最怕<span className="font-bold text-[#802020]">高溫與水氣</span>！我們堅持純手工無添加防腐劑，收到後強烈建議 <span className="bg-amberRed text-white px-2 py-0.5 rounded text-sm font-bold mx-1">2小時內</span> 食用完畢。若未立即食用，請務必 <span className="font-bold underline decoration-amberRed decoration-2 underline-offset-2">冷藏保存</span>，切勿冷凍以免糖衣退冰受潮融化。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <section className="mb-20 fade-in-up">
+                    <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-10 text-center font-serif flex items-center justify-center gap-3">
+                        <span className="w-8 h-px bg-gray-300"></span>訂購五步驟<span className="w-8 h-px bg-gray-300"></span>
+                    </h2>
+                    <div className="bg-white/60 backdrop-blur-xl border border-white/80 rounded-3xl p-8 shadow-sm bg-wood-texture relative">
+                        <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-8 md:gap-4">
+                            <div className="hidden md:block absolute top-1/2 left-[10%] right-[10%] h-1 bg-warmWood/30 -translate-y-[20px] rounded-full z-0"></div>
+                            {timelineSteps.map((step, index) => (
+                                <div key={step.id} className="relative z-10 flex md:flex-col items-center gap-4 md:gap-3 w-full md:w-1/5 group">
+                                    <div className="w-14 h-14 shrink-0 rounded-full bg-white border-4 border-amberRed text-amberRed flex items-center justify-center font-bold text-xl shadow-md group-hover:bg-amberRed group-hover:text-white transition-all duration-300 transform group-hover:scale-110">{step.icon}</div>
+                                    {index !== timelineSteps.length - 1 && <div className="md:hidden absolute top-14 bottom-[-32px] left-[27px] w-0.5 bg-warmWood/50 z-0"></div>}
+                                    <div className="pt-2 md:pt-4 w-full">
+                                        <h4 className="text-lg font-bold text-amberRed mb-2 font-serif tracking-wide md:text-center">{step.id}. {step.title}</h4>
+                                        <ul className="flex flex-col gap-1.5 w-full md:w-auto items-start md:items-center">
+                                            {step.desc.map((line, i) => (
+                                                <li key={i} className="text-[13px] text-gray-600 flex items-start gap-1.5 text-left"><span className="text-warmWood text-[10px] mt-1 shrink-0">◆</span><span className="leading-snug">{line}</span></li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-20 fade-in-up">
+                    <div className="glass-panel-light p-8 rounded-3xl hover:bg-white/70 transition-colors">
+                        <div className="flex items-center gap-3 mb-6 border-b border-warmWood/30 pb-4">
+                            <div className="p-2 bg-amberRed/10 rounded-lg text-amberRed"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg></div>
+                            <h2 className="text-2xl font-bold text-gray-800 font-serif">配送與運費</h2>
+                        </div>
+                        <div className="space-y-5">
+                            <div>
+                                <h4 className="font-bold text-[#8B4513] mb-1 flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-amberRed"></span>雙北地區專車配送</h4>
+                                <p className="text-sm text-gray-700 pl-3.5">商品小計滿 <span className="font-bold text-amberRed">NT$5,000</span> 享免運。<br/>未達門檻酌收 NT$350 運費。</p>
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-[#8B4513] mb-1 flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-amberRed"></span>外縣市地區</h4>
+                                <p className="text-sm text-gray-700 pl-3.5">為確保糖衣脆度，目前暫無宅配，需配合商家時間地點進行自取。</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="glass-panel-light p-8 rounded-3xl hover:bg-white/70 transition-colors">
+                        <div className="flex items-center gap-3 mb-6 border-b border-warmWood/30 pb-4">
+                            <div className="p-2 bg-warmWood/20 rounded-lg text-[#8B4513]"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg></div>
+                            <h2 className="text-2xl font-bold text-gray-800 font-serif">稻草掃帚租賃</h2>
+                        </div>
+                        <div className="space-y-4">
+                            <p className="text-sm text-gray-700">我們提供充滿傳統復古風味的稻草掃帚租借，為您的活動增添寧夏夜市的獨特氛圍（只租不賣）。</p>
+                            <ul className="text-sm text-gray-700 space-y-2 bg-white/40 p-4 rounded-xl border border-white">
+                                <li className="flex justify-between items-center"><span className="font-bold text-gray-800">單組租金</span> <span className="text-amberRed font-bold">NT$ 200</span></li>
+                                <li className="flex justify-between items-center border-b border-gray-200 pb-2"><span className="font-bold text-gray-800">單組押金</span> <span>NT$ 1,800</span></li>
+                                <li className="text-xs text-gray-500 pt-1 leading-relaxed">活動結束歸還且無毀損，即退還全額押金。若損壞將自押金扣除 NT$1,000。請勿插置糖葫蘆以外之異物。</li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="mb-20 fade-in-up">
+                    <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-8 text-center font-serif flex items-center justify-center gap-3">
+                        <span className="w-8 h-px bg-gray-300"></span>常見問題 FAQ<span className="w-8 h-px bg-gray-300"></span>
+                    </h2>
+                    <div className="space-y-8">
+                        {faqCategories.map((cat, catIdx) => (
+                            <div key={catIdx} className="bg-white/60 backdrop-blur-md rounded-2xl p-6 md:p-8 shadow-sm border border-white/80">
+                                <h3 className="text-xl font-bold text-[#8B4513] mb-6 border-b border-warmWood/30 pb-3">{cat.category}</h3>
+                                <div className="space-y-3">
+                                    {cat.items.map((item, itemIdx) => {
+                                        const id = `cat-${catIdx}-item-${itemIdx}`;
+                                        const isOpen = openFaqId === id;
+                                        return (
+                                            <div key={id} className={`border rounded-xl transition-all duration-300 overflow-hidden cursor-pointer ${isOpen ? 'border-amberRed bg-white/90 shadow-md' : 'border-white/60 bg-white/40 hover:border-amberRed/40'}`} onClick={() => setOpenFaqId(isOpen ? null : id)}>
+                                                <div className="p-4 md:p-5 flex justify-between items-center gap-4">
+                                                    <h4 className={`font-bold text-[15px] md:text-base transition-colors ${isOpen ? 'text-amberRed' : 'text-gray-800'}`}>Q：{item.q}</h4>
+                                                    <span className={`shrink-0 text-gray-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-amberRed' : ''}`}><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 9l-7 7-7-7"></path></svg></span>
+                                                </div>
+                                                {isOpen && (
+                                                    <div className="px-4 md:px-5 pb-4 md:pb-5 animate-[fadeIn_0.3s_ease-out]">
+                                                        <div className="pt-2 border-t border-gray-100 flex items-start gap-2">
+                                                            <span className="font-bold text-amberRed">A：</span>
+                                                            <p className="text-sm md:text-[15px] text-gray-700 leading-relaxed break-words">{item.a}</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                <section className="text-center fade-in-up">
+                    <div className="relative bg-gradient-to-br from-white/80 to-[#f8f5f2]/80 backdrop-blur-xl border border-white rounded-3xl p-8 md:p-12 shadow-[0_20px_40px_-10px_rgba(165,42,42,0.15)] overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-warmWood rounded-full mix-blend-multiply filter blur-[50px] opacity-20 -translate-y-1/2 translate-x-1/2"></div>
+                        <h2 className="relative z-10 text-2xl md:text-3xl font-bold text-gray-800 mb-4 font-serif">讓琥珀色的甜蜜，點亮您的重要時刻</h2>
+                        <p className="relative z-10 text-gray-600 mb-8 max-w-xl mx-auto leading-relaxed">無論是浪漫婚宴、校園慶典還是企業活動，李伯伯傳承三十年的手工糖葫蘆，將為賓客帶來視覺與味蕾的雙重驚喜。現在就前往挑選，讓我們為您新鮮熬製這份專屬的甜蜜祝福！</p>
+                        <button onClick={() => navigateTo('list')} className="relative z-10 inline-flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-amberRed to-[#802020] text-white rounded-full font-bold text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all border border-white/20 group">
+                            <svg className="w-6 h-6 transform group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                            立即挑選甜蜜組合
+                        </button>
+                    </div>
+                </section>
+            </div>
+        );
+    };
+
+    const ContactUs = () => {
+        useScrollFadeIn();
+        const [openAccordion, setOpenAccordion] = useState(0);
+
+        const faqs = [
+            { 
+                id: 'mrt', title: '捷運 (MRT)', 
+                icon: <svg className="w-5 h-5 text-warmWood group-hover:text-amberRed transition-colors" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><path d="m8 19-2 3"/><path d="m18 22-2-3"/><path d="M8 15h0"/><path d="M16 15h0"/></svg>,
+                content: (
+                    <ul className="pl-8 border-l-2 border-warmWood/30 pb-4 space-y-3">
+                        <li><strong>雙連站：</strong>步行約 8 分鐘可抵達「民生西路入口」；或可選擇轉乘公車 1 站。</li>
+                        <li><strong>中山站：</strong>步行約 9 分鐘可抵達「南京西路入口」；或可選擇轉乘公車 1 站。</li>
+                    </ul>
+                ) 
+            },
+            { 
+                id: 'bus', title: '公車 (Bus)', 
+                icon: <svg className="w-5 h-5 text-warmWood group-hover:text-amberRed transition-colors" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/></svg>,
+                content: (
+                    <ul className="pl-8 border-l-2 border-warmWood/30 pb-4 space-y-4">
+                        <li><strong>靜修女中 / 雙連市場站：</strong>直達民生西路入口。<div className="text-sm text-darkWood/60 mt-1 leading-relaxed">搭乘路線：518, 42, 539, 811, 紅33</div></li>
+                        <li><strong>民生重慶路口站：</strong>步行 2 分鐘可抵達民生西路入口。<div className="text-sm text-darkWood/60 mt-1 leading-relaxed">搭乘路線：2, 215, 223, 250, 288, 302, 304, 306, 46, 601, 63, 636, 641, 704, 重慶幹線</div></li>
+                        <li><strong>圓環站：</strong>沿南京西路步行 2 分鐘可抵達南京西路入口。<div className="text-sm text-darkWood/60 mt-1 leading-relaxed">搭乘路線：2, 12, 46, 52, 282, 288, 306, 605, 622, 636, 660, 711</div></li>
+                        <li><strong>朝陽公園站：</strong>步行 3 分鐘可抵達夜市中段。<div className="text-sm text-darkWood/60 mt-1 leading-relaxed">搭乘路線：2, 215, 223, 250, 255, 288, 302, 304, 306, 42, 518, 601, 639, 641, 704, 811, 重慶幹線</div></li>
+                        <li><strong>建成公園站：</strong>步行 5 分鐘可抵達平陽街入口。<div className="text-sm text-darkWood/60 mt-1 leading-relaxed">搭乘路線：26, 266, 292, 304</div></li>
+                    </ul>
+                ) 
+            },
+            { 
+                id: 'parking', title: '停車場 (Parking)', 
+                icon: <svg className="w-5 h-5 text-warmWood group-hover:text-amberRed transition-colors" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 17V7h4a3 3 0 0 1 0 6H9"/></svg>,
+                content: (
+                    <ul className="pl-8 border-l-2 border-warmWood/30 pb-4 space-y-3">
+                        <li><strong>蓬萊國小地下停車場：</strong>距離最近 (225車位)，出入口在太原路與平陽街。</li>
+                        <li><strong>建成公園停車場：</strong>步行 5 分鐘，出入口位於承德路二段。</li>
+                        <li><strong>朝陽公園地下停車場：</strong>步行 3 分鐘，入口於重慶北路二段上。</li>
+                        <li><strong>文化京都大樓停車場：</strong>步行 2 分鐘。<span className="text-amberRed font-medium text-sm">(註：週六晚間及週日無營業)</span></li>
+                        <li><strong>民生西路停車場：</strong>步行 4 分鐘 (車位較少)。</li>
+                    </ul>
+                ) 
+            }
+        ];
+
+        return (
+            <div className="pt-32 pb-20 relative overflow-hidden min-h-screen">
+                <div className="absolute top-20 right-0 w-64 h-64 bg-warmWood opacity-10 rounded-bl-full z-0 pointer-events-none"></div>
+                <div className="absolute bottom-40 left-0 w-48 h-48 bg-amberRed opacity-5 rounded-tr-full z-0 pointer-events-none"></div>
+
+                <div className="max-w-7xl mx-auto px-6 relative z-10">
+                    <div className="text-center mb-16 fade-in-up">
+                        <p className="text-warmWood font-sans tracking-[0.3em] text-sm mb-4 font-semibold uppercase">Contact & Location</p>
+                        <h1 className="text-4xl md:text-5xl font-serif font-bold text-darkWood mb-6 tracking-wide">尋找那抹<span className="text-amberRed">琥珀色</span></h1>
+                        <div className="w-16 h-1 bg-warmWood mx-auto rounded-full"></div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-stretch">
+                        <div className="space-y-8 flex flex-col justify-between fade-in-up">
+                            <div className="glass-panel-light p-8 md:p-10 rounded-[2rem] shadow-sm relative overflow-hidden">
+                                <div className="absolute -right-8 -top-8 w-24 h-24 bg-amberRed/5 rounded-full"></div>
+                                <h3 className="font-serif text-2xl text-amberRed tracking-widest font-bold mb-6 flex items-center gap-3"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg> 攤位資訊</h3>
+                                <ul className="space-y-6 text-darkWood/80 font-sans text-lg">
+                                    <li className="flex items-start gap-4">
+                                        <span className="mt-1.5 w-2.5 h-2.5 rounded-full bg-warmWood shrink-0"></span>
+                                        <div><p className="font-bold text-darkWood mb-1">地址</p><p className="font-light text-base md:text-lg">臺北市大同區寧夏路<br/>寧夏夜市 61 攤（蓬萊國小前）</p></div>
+                                    </li>
+                                    <li className="flex items-start gap-4">
+                                        <span className="mt-1.5 w-2.5 h-2.5 rounded-full bg-warmWood shrink-0"></span>
+                                        <div><p className="font-bold text-darkWood mb-1">聯絡專線</p><p className="font-light text-base md:text-lg tracking-wider">0912-294-022 <span className="text-sm">（聯絡人：李伯伯、聯絡時間：12:00~23:00）</span></p></div>
+                                    </li>
+                                    <li className="flex items-start gap-4">
+                                        <span className="mt-1.5 w-2.5 h-2.5 rounded-full bg-warmWood shrink-0"></span>
+                                        <div><p className="font-bold text-darkWood mb-1">營業時間</p><p className="font-light text-base md:text-lg tracking-wider">夜市實體攤位 18:00 ~ 23:00</p></div>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div className="glass-panel-light p-8 md:p-10 rounded-[2rem] shadow-sm relative overflow-hidden">
+                                <div className="absolute -left-8 -bottom-8 w-24 h-24 bg-warmWood/10 rounded-full"></div>
+                                <h3 className="font-serif text-2xl text-amberRed tracking-widest font-bold mb-6 flex items-center gap-3">
+                                    <svg className="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                                    交通指引
+                                </h3>
+                                <div className="text-darkWood/80 font-sans text-base font-light w-full">
+                                    {faqs.map((faq, idx) => (
+                                        <div key={idx} className="border-b border-warmWood/30">
+                                            <button onClick={() => setOpenAccordion(openAccordion === idx ? -1 : idx)} className="w-full py-4 flex justify-between items-center outline-none group">
+                                                <span className={`font-bold flex items-center gap-3 transition-colors ${openAccordion === idx ? 'text-amberRed' : 'text-darkWood group-hover:text-amberRed'}`}>
+                                                    {faq.icon}
+                                                    {faq.title}
+                                                </span>
+                                                <svg className={`w-5 h-5 transform transition-transform duration-300 ${openAccordion === idx ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 9l-7 7-7-7"></path></svg>
+                                            </button>
+                                            {openAccordion === idx && <div className="animate-[fadeIn_0.3s_ease-out]">{faq.content}</div>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="w-full h-[400px] lg:h-auto rounded-[2rem] overflow-hidden shadow-xl fade-in-up border-4 border-pureWhite relative group">
+                            <div className="absolute top-4 left-4 z-20 bg-pureWhite/95 backdrop-blur-md px-4 py-2 rounded-full shadow-md text-sm font-sans text-darkWood flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                寧夏夜市第61號攤位
+                            </div>
+                            <iframe src="https://maps.google.com/maps?q=寧夏夜市&t=&z=16&ie=UTF8&iwloc=&output=embed" width="100%" height="100%" style={{border: 0, filter: 'contrast(1.05) saturate(1.1)'}} allowFullScreen={true} loading="lazy" referrerPolicy="no-referrer-when-downgrade" className="transition-transform duration-700 group-hover:scale-105"></iframe>
+                        </div>
+                    </div>
+                    
+                    <div className="mt-16 fade-in-up">
+                        <div className="glass-panel-light p-10 lg:p-14 rounded-[2rem] shadow-sm border border-pureWhite text-center relative overflow-hidden">
+                            <div className="absolute -right-10 -top-10 w-40 h-40 bg-warmWood opacity-10 rounded-full"></div>
+                            <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-amberRed opacity-5 rounded-full"></div>
+                            
+                            <h3 className="font-serif text-3xl md:text-4xl text-darkWood font-bold mb-4 tracking-wider">線上交流</h3>
+                            <p className="text-darkWood/70 font-sans mb-10 text-lg font-light max-w-2xl mx-auto leading-relaxed">追蹤我們的社群，掌握最新優惠與出攤動態。</p>
+                            
+                            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12 relative z-10">
+                                <a href="https://qr-official.line.me/gs/M_687vjdlz_GW.png?oat_content=qr" target="_blank" rel="noopener noreferrer" className="group flex flex-col items-center">
+                                    <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl bg-pureWhite shadow-sm flex items-center justify-center p-3 transform transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-xl group-hover:border-amberRed border-2 border-transparent">
+                                        <img src="https://lh3.googleusercontent.com/d/1GqMTDC4ULAb1RNPr53PogznTrU0KXhYv" alt="LINE 官方帳號" className="w-full h-full object-contain rounded-xl" />
+                                    </div>
+                                    <span className="mt-4 font-sans text-sm font-medium text-darkWood/80 group-hover:text-amberRed transition-colors tracking-widest">LINE 線上客服</span>
+                                </a>
+                                <a href="https://www.facebook.com/ningxia.tanghulu" target="_blank" rel="noopener noreferrer" className="group flex flex-col items-center">
+                                    <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl bg-pureWhite shadow-sm flex items-center justify-center p-3 transform transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-xl group-hover:border-amberRed border-2 border-transparent">
+                                        <img src="https://lh3.googleusercontent.com/d/1nxPwGWyyNUl9EuxSJtsLiQrVrKIck5lN" alt="Facebook 粉絲專頁" className="w-full h-full object-contain rounded-xl" />
+                                    </div>
+                                    <span className="mt-4 font-sans text-sm font-medium text-darkWood/80 group-hover:text-amberRed transition-colors tracking-widest">粉絲專頁</span>
+                                </a>
+                                <a href="https://www.facebook.com/profile.php?id=100057620284780" target="_blank" rel="noopener noreferrer" className="group flex flex-col items-center">
+                                    <div className="w-24 h-24 md:w-28 md:h-28 rounded-2xl bg-pureWhite shadow-sm flex items-center justify-center p-3 transform transition-all duration-300 group-hover:-translate-y-2 group-hover:shadow-xl group-hover:border-amberRed border-2 border-transparent">
+                                        <img src="https://lh3.googleusercontent.com/d/1ZggCQXDqt_C03167yXBHbC_kCR4l4zNn" alt="寧夏夜市" className="w-full h-full object-contain rounded-xl" />
+                                    </div>
+                                    <span className="mt-4 font-sans text-sm font-medium text-darkWood/80 group-hover:text-amberRed transition-colors tracking-widest">寧夏夜市首頁</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // ==========================================
+    // 網站主入口與動態頁面 (App)
+    // ==========================================
+    function App() {
+      const [currentPage, setCurrentPage] = useState('brand');
+      const [cart, setCart] = useState({});
+      const [alertMsg, setAlertMsg] = useState(null);
+      
+      const [isSubmitting, setIsSubmitting] = useState(false);
+      const [submittedOrder, setSubmittedOrder] = useState(null);
+      const [formData, setFormData] = useState({ ...initialFormData });
+
+      // 照片授權聲明收放狀態
+      const [isTermsOpen, setIsTermsOpen] = useState(false);
+
+      // 訂單查詢狀態擴充
+      const [inqName, setInqName] = useState('');
+      const [inqPhone, setInqPhone] = useState('');
+      const [inqDate, setInqDate] = useState('');
+      const [inqStatus, setInqStatus] = useState('idle'); 
+      const [inqData, setInqData] = useState(null); 
+      const [inqMatches, setInqMatches] = useState([]); 
+      const [showEmailPrompt, setShowEmailPrompt] = useState(false);
+      const [resendEmail, setResendEmail] = useState('');
+      const [isResending, setIsResending] = useState(false);
+      const [isPdfDownloaded, setIsPdfDownloaded] = useState(false);
+
+      const [isNavScrolled, setIsNavScrolled] = useState(false);
+      const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+      useEffect(() => {
+        const handleScroll = () => setIsNavScrolled(window.scrollY > 50);
+        window.addEventListener('scroll', handleScroll);
+        products.forEach(p => { const img = new Image(); img.src = p.image; });
+        return () => window.removeEventListener('scroll', handleScroll);
+      }, []);
+
+      useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setIsMobileMenuOpen(false);
+      }, [currentPage]);
+
+      useEffect(() => {
+        if (currentPage === 'list') {
+          setSubmittedOrder(null);
+        }
+        if (currentPage !== 'inquiry') {
+          setInqStatus('idle');
+          setInqData(null);
+          setInqMatches([]);
+          setShowEmailPrompt(false);
+        }
+        setIsPdfDownloaded(false); // 切換頁面時重置下載狀態
+      }, [currentPage]);
+
+      useScrollFadeIn([currentPage, inqStatus]);
+
+      const updateCart = (productId, delta) => {
+        setCart(prev => {
+          const currentQty = prev[productId] || 0;
+          const newQty = currentQty + delta;
+          if (newQty <= 0) { const newCart = { ...prev }; delete newCart[productId]; return newCart; }
+          return { ...prev, [productId]: newQty };
+        });
+      };
+
+      const handleQuantityChange = (productId, value) => {
+        const num = parseInt(value, 10);
+        if (isNaN(num) || num <= 0) {
+          setCart(prev => { const newCart = { ...prev }; delete newCart[productId]; return newCart; });
+        } else { setCart(prev => ({ ...prev, [productId]: num })); }
+      };
+
+      const handleFormChange = (e) => {
+        const { name, value } = e.target;
+        if ((name === 'weddingDate' || name === 'generalDate') && value) {
+          if (value < getMinDate()) { setAlertMsg(`日期需為 14 天後（最早：${getMinDate()}）。`); return; }
+        }
+        setFormData(prev => ({ ...prev, [name]: value }));
+      };
+
+      const broomQty = cart[5] || 0; 
+      const candyQty = Object.entries(cart).reduce((sum, [id, qty]) => parseInt(id) !== 5 ? sum + qty : sum, 0);
+      const getCartTotalItems = () => Object.values(cart).reduce((a, b) => a + b, 0);
+      
+      const candySubtotal = Object.entries(cart).reduce((total, [id, qty]) => {
+        if (parseInt(id) === 5) return total;
+        const product = products.find(p => p.id === parseInt(id));
+        return total + (product ? product.price * qty : 0);
+      }, 0);
+
+      let shippingFee = 0;
+      let shippingHint = "";
+      if (candyQty > 0 || broomQty > 0) {
+        if (formData.deliveryCity === 'other') { shippingFee = 0; shippingHint = "(需自取)"; }
+        else if (formData.deliveryCity === 'taipei' || formData.deliveryCity === 'new_taipei') {
+          shippingFee = candySubtotal >= 5000 ? 0 : 350; shippingHint = candySubtotal >= 5000 ? "(免運)" : "";
+        }
+      }
+
+      const broomRent = broomQty * 200;
+      const broomDeposit = broomQty * 1800;
+      const totalPrice = candySubtotal + broomRent + broomDeposit + shippingFee;
+
+      const handleSubmitOrder = async (e) => {
+        e.preventDefault();
+        let errors = [];
+        if (candyQty > 0 && candyQty < 50) errors.push("最低出貨量需達 50 支。");
+        if (candyQty === 0 && broomQty === 0) errors.push("您尚未選擇任何商品。");
+        if (!formData.deliveryCity) errors.push("請選擇配送縣市。");
+        if (errors.length > 0) { setAlertMsg(errors); return; }
+
+        setIsSubmitting(true);
+        let specificDetails = "";
+        if (formData.eventType === 'wedding') {
+            specificDetails = `餐廳：${formData.weddingRestaurant} (${formData.weddingHall})\n地址：${formData.weddingAddress}\n新郎：${formData.groomName} (${formData.groomPhone})\n新娘：${formData.brideName} (${formData.bridePhone})`;
+        } else if (formData.eventType === 'school' || formData.eventType === 'other') {
+            specificDetails = `地點：${formData.generalLocation}\n地址：${formData.generalAddress}`;
+        }
+
+        const now = new Date();
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const dd = String(now.getDate()).padStart(2, '0');
+        const hh = String(now.getHours()).padStart(2, '0');
+        const min = String(now.getMinutes()).padStart(2, '0');
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+        let randomLetters = chars.charAt(Math.floor(Math.random() * chars.length)) + chars.charAt(Math.floor(Math.random() * chars.length));
+        const orderNumber = `${mm}${dd}${hh}${min}${randomLetters}`;
+
+        const payload = {
+            orderDate: now.toLocaleDateString('zh-TW'), orderTime: now.toLocaleTimeString('zh-TW', { hour12: false }),
+            orderNumber: orderNumber, ordererName: formData.ordererName, ordererPhone: formData.ordererPhone, ordererEmail: formData.ordererEmail,
+            recipientName: formData.recipientName, recipientPhone: formData.recipientPhone,
+            deliveryCity: formData.deliveryCity === 'taipei' ? '臺北市' : (formData.deliveryCity === 'new_taipei' ? '新北市' : '外縣市'),
+            eventType: formData.eventType === 'wedding' ? '浪漫婚禮 / 喜宴' : (formData.eventType === 'school' ? '校園活動 / 園遊會' : '其他'),
+            eventDate: formData.weddingDate || formData.generalDate, eventTime: formData.weddingTime || formData.generalTime,
+            specificDetails: specificDetails,
+            itemsList: Object.entries(cart).filter(([_, q]) => q > 0).map(([id, q]) => { const p = products.find(prod => prod.id === parseInt(id)); return `- ${p.name} x${q} (NT$${p.price * q})`; }).join('\n'),
+            candyTotal: candySubtotal, broomRent: broomRent, broomDeposit: broomDeposit, shippingFee: shippingFee,
+            totalAmount: totalPrice, notes: formData.notes, cart: cart
+        };
+
+        try {
+          const response = await fetch(SCRIPT_URL, { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload) 
+          });
+          const result = await response.json();
+
+          if (result.status === 'success') {
+            setSubmittedOrder({ 
+              payload: payload, orderNumber: orderNumber, cart: { ...cart }, candyQty, broomQty, 
+              candySubtotal, broomRent, broomDeposit, shippingFee, totalPrice, 
+              pdfDownloadUrl: result.pdfDownloadUrl 
+            });
+            setCart({}); setFormData({ ...initialFormData }); setCurrentPage('success'); 
+          } else {
+            setAlertMsg(["⚠️ 訂單送出失敗", `錯誤：${result.message}`]);
+          }
+        } catch (error) {
+          setAlertMsg(["⚠️ 訂單連線失敗", "請檢查您的網路連線，或稍後再重試。", `💡 系統除錯訊息：${error.message}`]);
+        } finally { setIsSubmitting(false); }
+      };
+
+      const handleInquirySubmit = async (e) => {
+        e.preventDefault();
+        setIsPdfDownloaded(false); // 重新查詢時重置下載狀態
+        if (!inqName || !inqPhone || !inqDate) { setAlertMsg("請完整填寫所有查詢欄位！"); return; }
+        setInqStatus('loading');
+        try {
+            const url = `${SCRIPT_URL}?action=query_order&name=${encodeURIComponent(inqName)}&phone=${encodeURIComponent(inqPhone)}&date=${encodeURIComponent(inqDate)}`;
+            const res = await fetch(url);
+            const resData = await res.json();
+            
+            if (resData.status === 'success') {
+                if (resData.data.length > 1) {
+                    setInqMatches(resData.data);
+                    setInqStatus('multiple_matches');
+                } else if (resData.data.length === 1) {
+                    setInqData(resData.data[0]);
+                    setResendEmail(resData.data[0].ordererEmail || '');
+                    setInqStatus('success');
+                } else {
+                    setInqStatus('not_found');
+                }
+            } else { 
+                setInqStatus('not_found'); 
+            }
+        } catch (err) { console.error(err); setInqStatus('error'); }
+      };
+
+      // 點擊下載時打開連結並變更狀態
+      const handleDownloadPDF = (url) => {
+        if (url) {
+            window.open(url, '_blank');
+            setIsPdfDownloaded(true);
+        } else {
+            setAlertMsg("⚠️ 尚未取得 PDF 下載連結，請稍後再試或聯繫客服。");
+        }
+      };
+
+      const handleResendEmail = async () => {
+          if (!resendEmail) { setAlertMsg("請輸入聯絡信箱！"); return; }
+          setIsResending(true);
+          try {
+              const response = await fetch(SCRIPT_URL, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                  body: JSON.stringify({ action: 'resend_email', orderNumber: inqData.orderNumber, email: resendEmail })
+              });
+              const result = await response.json();
+              if (result.status === 'success') {
+                  setAlertMsg("✅ 訂單 PDF 明細已成功補發至您的信箱！");
+                  setShowEmailPrompt(false);
+              } else {
+                  setAlertMsg(["補發失敗，請稍後再試。", `錯誤：${result.message}`]);
+              }
+          } catch(err) { setAlertMsg(["補發失敗，請稍後再試。", `錯誤：${err.message}`]); } finally { setIsResending(false); }
+      };
+
+      const renderTimeOptions = () => {
+        let options = [<option key="empty" value="" disabled>請選擇時間</option>];
+        for (let m = 6 * 60 + 30; m <= 19 * 60; m += 30) {
+            const h = Math.floor(m / 60);
+            const mins = m % 60;
+            const timeStr = `${String(h).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+            options.push(<option key={timeStr} value={timeStr}>{timeStr}</option>);
+        }
+        return options;
+      };
+
+      const OrderReceiptContent = ({ order }) => (
+          <div className="bg-pureWhite border-2 border-warmWood/30 border-solid rounded-xl p-6 md:p-8 text-left shadow-sm mb-8 mx-auto relative max-w-2xl text-darkWood">
+            <div className="text-center mb-6 border-b-2 border-creamBg pb-4">
+              <h3 className="text-2xl font-bold text-amberRed tracking-widest font-serif">李伯伯糖葫蘆</h3>
+              <p className="text-darkWood/60 text-sm mt-1">訂購明細單 - {order.orderNumber}</p>
+              <p className="text-xs text-darkWood/50 mt-1">訂購時間：{order.payload.orderDate} {order.payload.orderTime}</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 text-sm bg-creamBg/50 p-4 rounded-lg border border-warmWood/20">
+              <div>
+                <p className="mb-1"><span className="font-bold">訂購人：</span>{order.payload.ordererName} ({order.payload.ordererPhone})</p>
+                <p className="mb-1"><span className="font-bold">收件人：</span>{order.payload.recipientName} ({order.payload.recipientPhone})</p>
+                <p><span className="font-bold">活動類型：</span>{order.payload.eventType}</p>
+              </div>
+              <div>
+                <p className="mb-1"><span className="font-bold">活動日期：</span>{order.payload.eventDate || '未填寫'}</p>
+                <p className="mb-1"><span className="font-bold">收貨時間：</span>{order.payload.eventTime || '未填寫'}</p>
+                <p><span className="font-bold">配送縣市：</span>{order.payload.deliveryCity}</p>
+              </div>
+              <div className="md:col-span-2 pt-2 mt-2 border-t border-warmWood/30">
+                <p className="whitespace-pre-line"><span className="font-bold">活動細節：</span><br/>{order.payload.specificDetails || '無'}</p>
+                {order.payload.notes && <p className="mt-2 text-darkWood/70 italic">備註：{order.payload.notes}</p>}
+              </div>
+            </div>
+            <div className="mb-6">
+              <h4 className="font-bold text-darkWood border-b border-warmWood/30 pb-2 mb-3">訂購商品</h4>
+              <table className="w-full text-sm text-darkWood/80">
+                <thead>
+                  <tr className="text-left text-darkWood/60 border-b border-creamBg"><th className="pb-2 font-medium">品項</th><th className="pb-2 font-medium text-center">單價</th><th className="pb-2 font-medium text-center">數量</th><th className="pb-2 font-medium text-right">小計</th></tr>
+                </thead>
+                <tbody className="divide-y divide-creamBg">
+                  {Object.entries(order.cart).filter(([_, qty]) => qty > 0).map(([id, qty]) => {
+                    const p = products.find(prod => prod.id === parseInt(id)); if (!p) return null;
+                    return <tr key={id}><td className="py-3 pr-2">{p.name}</td><td className="py-3 text-center">NT$ {p.price}</td><td className="py-3 text-center">x {qty}</td><td className="py-3 text-right">NT$ {(p.price * qty).toLocaleString()}</td></tr>;
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="border-t-2 border-warmWood/30 pt-4 space-y-2 text-sm text-darkWood/80">
+              <div className="flex justify-between"><span>商品小計 ({order.candyQty} 支)</span><span>NT$ {order.candySubtotal.toLocaleString()}</span></div>
+              {order.broomQty > 0 && (<><div className="flex justify-between"><span>掃帚租金 ({order.broomQty} 組)</span><span>NT$ {order.broomRent.toLocaleString()}</span></div><div className="flex justify-between opacity-60"><span>掃帚押金 (歸還後退回)</span><span>NT$ {order.broomDeposit.toLocaleString()}</span></div></>)}
+              <div className="flex justify-between"><span>配送運費</span><span>NT$ {order.shippingFee.toLocaleString()}</span></div>
+              <div className="flex justify-between items-center pt-3 mt-3 border-t border-creamBg"><span className="font-bold text-darkWood text-base">訂單總金額</span><span className="font-black text-amberRed text-xl">NT$ {order.totalPrice.toLocaleString()}</span></div>
+            </div>
+          </div>
+      );
+
+      const handleNavigate = (page) => {
+          setCurrentPage(page === 'products' ? 'list' : page);
+      };
+
+      return (
+        <div className="min-h-screen relative overflow-x-hidden font-sans text-darkWood bg-creamBg">
+          <div className="fixed inset-0 z-0 pointer-events-none">
+            <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-warmWood mix-blend-multiply filter blur-[100px] opacity-30 animate-pulse rounded-full"></div>
+            <div className="absolute bottom-[-10%] right-[-10%] w-[60vw] h-[60vw] bg-amberRed mix-blend-multiply filter blur-[120px] opacity-[0.08] rounded-full"></div>
+          </div>
+
+          <nav className={`fixed w-full z-50 transition-all duration-500 ${isNavScrolled ? 'px-0' : 'px-0'}`}>
+            <div className={`mx-auto flex justify-between items-center max-w-7xl transition-all duration-300 ${isNavScrolled ? 'glass-nav-scrolled shadow-sm w-full px-6 py-4 rounded-none' : 'glass-panel-light mx-4 mt-4 rounded-2xl px-6 py-4'}`}>
+                <div className="font-serif text-2xl font-bold tracking-widest text-amberRed cursor-pointer" onClick={() => handleNavigate('brand')}>李伯伯糖葫蘆</div>
+                
+                <div className="hidden md:flex items-center space-x-8 text-sm font-medium tracking-wider text-darkWood">
+                    <a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('brand'); }} className={`transition-colors duration-300 ${currentPage === 'brand' ? 'text-amberRed font-bold' : 'hover:text-amberRed'}`}>品牌故事</a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('process'); }} className={`transition-colors duration-300 ${currentPage === 'process' ? 'text-amberRed font-bold' : 'hover:text-amberRed'}`}>訂購流程</a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('list'); }} className={`transition-colors duration-300 ${['list', 'order', 'success'].includes(currentPage) ? 'text-amberRed font-bold' : 'hover:text-amberRed'}`}>商品訂購</a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('inquiry'); }} className={`transition-colors duration-300 ${currentPage === 'inquiry' ? 'text-amberRed font-bold' : 'hover:text-amberRed'}`}>訂單查詢</a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('contact'); }} className={`transition-colors duration-300 ${currentPage === 'contact' ? 'text-amberRed font-bold' : 'hover:text-amberRed'}`}>聯絡我們</a>
+                    
+                    {['list', 'order'].includes(currentPage) && (
+                        <button onClick={() => handleNavigate('order')} className="relative flex items-center justify-center w-11 h-11 rounded-full bg-amberRed text-white shadow-md hover:bg-pureWhite hover:text-amberRed transition-all ml-4 animate-bounce">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                            {getCartTotalItems() > 0 && <span className="absolute -top-1 -right-1 bg-pureWhite text-amberRed text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-md border-2 border-amberRed">{getCartTotalItems()}</span>}
+                        </button>
+                    )}
+                </div>
+
+                <div className="md:hidden flex items-center space-x-3">
+                    {['list', 'order'].includes(currentPage) && (
+                        <button onClick={() => handleNavigate('order')} className="relative flex items-center justify-center w-10 h-10 rounded-full bg-amberRed text-white shadow-md hover:bg-pureWhite hover:text-amberRed transition-all animate-bounce">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                            {getCartTotalItems() > 0 && <span className="absolute -top-1 -right-1 bg-pureWhite text-amberRed text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-md border-2 border-amberRed">{getCartTotalItems()}</span>}
+                        </button>
+                    )}
+                    <button className="text-amberRed focus:outline-none p-1" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"></path></svg></button>
+                </div>
+            </div>
+
+            {isMobileMenuOpen && (
+                <div className="md:hidden glass-panel-light mx-4 mt-2 p-5 rounded-2xl flex flex-col space-y-4 text-center text-darkWood tracking-wider shadow-lg">
+                    <a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('brand'); }} className={`py-2 border-b border-warmWood/20 ${currentPage === 'brand' ? 'text-amberRed font-bold' : 'hover:text-amberRed'}`}>品牌故事</a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('process'); }} className={`py-2 border-b border-warmWood/20 ${currentPage === 'process' ? 'text-amberRed font-bold' : 'hover:text-amberRed'}`}>訂購流程</a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('list'); }} className={`py-2 border-b border-warmWood/20 ${['list', 'order', 'success'].includes(currentPage) ? 'text-amberRed font-bold' : 'hover:text-amberRed'}`}>商品訂購</a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('inquiry'); }} className={`py-2 border-b border-warmWood/20 ${currentPage === 'inquiry' ? 'text-amberRed font-bold' : 'hover:text-amberRed'}`}>訂單查詢</a>
+                    <a href="#" onClick={(e) => { e.preventDefault(); handleNavigate('contact'); }} className={`py-2 ${currentPage === 'contact' ? 'text-amberRed font-bold' : 'hover:text-amberRed'}`}>聯絡我們</a>
+                </div>
+            )}
+          </nav>
+
+          {alertMsg && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center">
+              <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setAlertMsg(null)}></div>
+              <div className="bg-pureWhite rounded-2xl shadow-2xl p-6 md:p-8 max-w-md w-full mx-4 relative z-10 fade-in-up is-visible">
+                <h3 className="text-xl font-bold text-gray-900 mb-4 pb-2 border-b border-gray-100">系統提示</h3>
+                <div className="text-gray-700 mb-6 text-sm leading-relaxed text-left">
+                  {Array.isArray(alertMsg) ? <ul className="space-y-2">{alertMsg.map((m, idx) => <li key={idx} className={m.includes('⚠️') || m.includes('✅') ? "text-amberRed font-bold text-base" : m.includes('💡') ? "text-gray-400 text-xs mt-4 break-all" : "text-gray-700"}>{m}</li>)}</ul> : alertMsg}
+                </div>
+                <button onClick={() => setAlertMsg(null)} className="w-full bg-amberRed hover:bg-darkWood text-white font-bold py-3 rounded-xl transition-colors">我知道了</button>
+              </div>
+            </div>
+          )}
+
+          {currentPage === 'brand' && <BrandStory navigateTo={handleNavigate} />}
+          {currentPage === 'process' && <OrderProcess navigateTo={handleNavigate} />}
+          {currentPage === 'contact' && <ContactUs />}
+
+          {/* === 產品列表區塊 === */}
+          {currentPage === 'list' && (
+            <div className="relative z-10 container mx-auto px-6 pt-32 pb-16 max-w-7xl fade-in-up">
+              <header className="text-center mb-16">
+                <div className="inline-block relative cursor-pointer" onClick={() => handleNavigate('list')}>
+                  <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-amberRed mb-4 tracking-widest drop-shadow-sm font-serif">商品選購</h1>
+                  <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 w-32 h-1.5 bg-warmWood rounded-full shadow-sm"></div>
+                </div>
+                <p className="mt-8 text-lg md:text-xl text-darkWood tracking-[0.2em] font-medium opacity-80">傳承寧夏夜市三十年・琥珀糖衣下的酸甜記憶</p>
+              </header>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                {products.map((product) => (
+                  <div key={product.id} className="group relative rounded-3xl p-5 transition-all duration-500 ease-out bg-pureWhite/50 backdrop-blur-[10px] border border-pureWhite/80 shadow-[0_8px_32px_0_rgba(165,42,42,0.05)] hover:-translate-y-2 hover:bg-pureWhite/80 hover:shadow-[0_20px_40px_0_rgba(165,42,42,0.1)] hover:border-pureWhite flex flex-col h-full">
+                    <div className="relative w-full aspect-square rounded-2xl overflow-hidden mb-5 shadow-sm bg-pureWhite/60 flex items-center justify-center p-3">
+                      <img src={product.image} alt={product.name} className="w-full h-full object-cover rounded-xl transition-transform duration-700 ease-in-out group-hover:scale-110 drop-shadow-sm mix-blend-multiply" loading="lazy" decoding="async" />
+                      <div className={`absolute top-3 ${product.id >= 1 && product.id <= 4 ? 'left-3' : 'right-3'} w-14 h-14 bg-amberRed rounded-full flex flex-col items-center justify-center text-white shadow-md border-2 border-pureWhite transform group-hover:rotate-12 transition-transform duration-300`}>
+                        <span className="text-[10px] font-medium opacity-90 -mb-1 tracking-wider">NT$</span><span className="text-lg font-bold font-serif">{product.price}</span>
+                      </div>
+                    </div>
+                    <div className="px-2 flex-grow flex flex-col">
+                      <h3 className="text-xl font-bold text-amberRed mb-3 group-hover:text-darkWood transition-colors tracking-wide font-serif">{product.name}</h3>
+                      <div className="flex flex-wrap gap-2 mb-3">{product.tags.map((tag, index) => <span key={index} className="px-2 py-1 text-xs font-bold tracking-widest rounded-full bg-warmWood/15 text-darkWood border border-warmWood/30 shadow-sm backdrop-blur-sm">{tag}</span>)}</div>
+                      <p className="text-[13px] text-darkWood/70 leading-relaxed whitespace-pre-line group-hover:text-darkWood transition-colors flex-grow">{product.description}</p>
+                      <div className="mt-4 pt-4 border-t border-warmWood/30 flex items-center justify-between">
+                        <span className="text-sm font-bold text-darkWood/80">數量</span>
+                        <div className="flex items-center space-x-3 bg-pureWhite/80 rounded-full px-1 py-1 shadow-sm border border-pureWhite">
+                          <button onClick={() => updateCart(product.id, -1)} className="w-8 h-8 rounded-full bg-pureWhite text-amberRed font-bold shadow-sm hover:bg-amberRed hover:text-white transition-colors flex items-center justify-center text-lg">-</button>
+                          <input type="number" min="0" value={cart[product.id] || 0} onChange={(e) => handleQuantityChange(product.id, e.target.value)} className="w-10 text-center font-bold text-darkWood bg-transparent border-none outline-none focus:ring-0 p-0 m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" style={{ MozAppearance: 'textfield' }} />
+                          <button onClick={() => updateCart(product.id, 1)} className="w-8 h-8 rounded-full bg-pureWhite text-amberRed font-bold shadow-sm hover:bg-amberRed hover:text-white transition-colors flex items-center justify-center text-lg">+</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-12 flex justify-center">
+                <button onClick={() => handleNavigate('order')} className="group relative flex items-center gap-3 px-8 py-4 bg-amberRed text-white rounded-full font-bold text-lg shadow-lg hover:shadow-xl hover:-translate-y-1 hover:bg-darkWood transition-all">
+                  前往購物車
+                  <svg xmlns="http://www.w3.org/2000/svg" className="transform group-hover:translate-x-1 transition-transform" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* === 訂單填寫區塊 === */}
+          {currentPage === 'order' && (
+            <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-8 pt-32 pb-16 fade-in-up">
+              <div className="mb-4 md:mb-6 flex justify-start">
+                 <button onClick={() => handleNavigate('list')} className="text-darkWood text-sm md:text-base font-bold flex items-center gap-2 transition-transform hover:-translate-x-1 bg-pureWhite/60 px-4 py-2.5 rounded-full shadow-sm backdrop-blur-sm border border-pureWhite hover:bg-pureWhite hover:shadow-md">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    返回選購
+                 </button>
+              </div>
+
+              <header className="text-center mb-10">
+                 <h1 className="text-3xl md:text-5xl font-bold text-amberRed mb-4 tracking-wider leading-snug font-serif">讓李伯伯為您的重要時刻增添甜蜜</h1>
+                 <p className="text-darkWood/70 text-lg md:text-xl">婚禮佈置 / 校園活動 / 品牌活動 預約訂購</p>
+              </header>
+
+              <main className="flex flex-col lg:flex-row gap-8 items-start">
+                <section className="w-full lg:w-5/12 bg-pureWhite/65 backdrop-blur-[12px] border border-pureWhite shadow-[0_10px_30px_-10px_rgba(165,42,42,0.08)] rounded-2xl p-6 md:p-8 lg:sticky lg:top-28 max-h-[calc(100vh-8rem)] overflow-y-auto custom-scrollbar flex flex-col">
+                  <h2 className="text-2xl font-bold text-darkWood mb-6 flex items-center gap-2 shrink-0 font-serif"><svg className="w-6 h-6 text-amberRed" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg> 挑選甜蜜組合</h2>
+                  
+                  <div className="space-y-4 mb-6 flex-grow">
+                    {Object.keys(cart).length === 0 ? (
+                      <div className="text-center py-10 flex flex-col items-center justify-center">
+                          <p className="text-darkWood/50 mb-5 text-lg">您的購物車目前是空的喔！</p>
+                          <button type="button" onClick={() => handleNavigate('list')} className="group inline-flex items-center gap-2 px-6 py-2.5 border-2 border-amberRed text-amberRed rounded-full font-bold tracking-widest hover:bg-amberRed hover:text-white transition-all shadow-sm hover:shadow-md">
+                              <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                              返回選購
+                          </button>
+                      </div>
+                    ) : (
+                      Object.entries(cart).map(([id, qty]) => {
+                        const p = products.find(prod => prod.id === parseInt(id)); if (!p) return null;
+                        return (
+                          <div key={id} className="flex items-center justify-between p-3 bg-pureWhite/60 rounded-xl border border-pureWhite">
+                            <div className="flex-1 pr-4"><h3 className="font-bold text-darkWood">{p.name}</h3><span className="text-amberRed font-medium text-sm">NT$ {p.price}</span></div>
+                            <div className="flex items-center gap-2 bg-pureWhite rounded-lg p-1 border border-warmWood/20">
+                              <button type="button" onClick={() => updateCart(p.id, -1)} className="w-7 h-7 flex items-center justify-center rounded text-darkWood/60 hover:bg-creamBg">-</button>
+                              <input type="number" min="0" value={qty} onChange={(e) => handleQuantityChange(p.id, e.target.value)} className="w-9 text-center font-bold text-darkWood bg-transparent border-none outline-none p-0 [&::-webkit-inner-spin-button]:appearance-none" />
+                              <button type="button" onClick={() => updateCart(p.id, 1)} className="w-7 h-7 flex items-center justify-center rounded text-darkWood/60 hover:bg-creamBg">+</button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  <div className="shrink-0 mt-auto pt-2">
+                    <hr className="border-warmWood/40 mb-4" />
+                    <div className="space-y-3 mb-4">
+                      <div className="flex justify-between text-sm text-darkWood/70"><span>商品小計 ({candyQty} 支)</span><span>NT$ {candySubtotal.toLocaleString()}</span></div>
+                      {broomQty > 0 && (<><div className="flex justify-between text-sm text-darkWood/70"><span>掃帚租金 ({broomQty} 組)</span><span>NT$ {broomRent.toLocaleString()}</span></div><div className="flex justify-between text-sm text-darkWood/70"><span>掃帚押金 <span className="text-xs opacity-60">(歸還後退回)</span></span><span>NT$ {broomDeposit.toLocaleString()}</span></div></>)}
+                      <div className="flex justify-between text-sm text-darkWood/70"><span>配送運費 <span className="text-xs text-amberRed font-medium">{shippingHint}</span></span><span>NT$ {shippingFee.toLocaleString()}</span></div>
+                    </div>
+                    <hr className="border-warmWood/40 mb-4" />
+                    <div className="flex justify-between items-end">
+                      <span className="text-darkWood font-bold">預估總金額</span>
+                      <div className="text-right"><span className="text-sm text-amberRed mr-1">NT$</span><span className="text-3xl font-bold text-amberRed inline-block">{totalPrice.toLocaleString()}</span></div>
+                    </div>
+                    {candyQty > 0 && candyQty < 50 && <p className="text-sm font-bold text-amberRed mt-4 bg-red-50/80 p-3 rounded-lg text-center">⚠️ 最低出貨量需達 50 支，目前僅 {candyQty} 支</p>}
+                    {formData.deliveryCity === 'other' && <p className="text-sm font-bold text-amberRed mt-2 bg-red-50/80 p-3 rounded-lg text-center">⚠️ 外縣市目前無法宅配，需配合商家時間地點自取</p>}
+                  </div>
+                </section>
+
+                <section className="w-full lg:w-7/12 bg-pureWhite/65 backdrop-blur-[12px] border border-pureWhite shadow-[0_10px_30px_-10px_rgba(165,42,42,0.08)] rounded-2xl p-6 md:p-8">
+                  <h2 className="text-2xl font-bold text-darkWood mb-6 flex items-center gap-2 font-serif"><svg className="w-6 h-6 text-amberRed" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> 填寫活動資訊</h2>
+
+                  <form onSubmit={handleSubmitOrder} className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-medium text-darkWood mb-1">活動類型 *</label>
+                      <select name="eventType" required value={formData.eventType} onChange={handleFormChange} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors appearance-none">
+                        <option value="" disabled>請選擇活動類型</option><option value="wedding">浪漫婚禮 / 喜宴</option><option value="school">校園活動 / 園遊會</option><option value="other">其他</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-6 bg-creamBg/50 p-5 rounded-xl border border-warmWood/20">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div><label className="block text-sm font-medium text-darkWood mb-1">訂購人姓名 *</label><input type="text" name="ordererName" required placeholder="例：王大明" value={formData.ordererName} onChange={handleFormChange} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" /></div>
+                        <div><label className="block text-sm font-medium text-darkWood mb-1">訂購人電話 *</label><input type="tel" name="ordererPhone" required placeholder="例：0912345678" value={formData.ordererPhone} onChange={handleFormChange} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" /></div>
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-darkWood mb-1">聯絡信箱 (Email)</label>
+                            <input type="email" name="ordererEmail" placeholder="例：example@gmail.com" value={formData.ordererEmail} onChange={handleFormChange} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" />
+                            <p className="text-xs text-amberRed mt-1 font-medium">※ 強烈建議填寫，系統將於訂單成立後自動寄送 PDF 明細備份至您的信箱。</p>
+                        </div>
+                        <div><label className="block text-sm font-medium text-darkWood mb-1">收貨人姓名 *</label><input type="text" name="recipientName" required placeholder="例：陳小美" value={formData.recipientName} onChange={handleFormChange} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" /></div>
+                        <div><label className="block text-sm font-medium text-darkWood mb-1">收貨人電話 *</label><input type="tel" name="recipientPhone" required placeholder="例：0987654321" value={formData.recipientPhone} onChange={handleFormChange} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" /></div>
+                      </div>
+                      <hr className="border-warmWood/30" />
+                      <div>
+                        <label className="block text-sm font-medium text-darkWood mb-1">配送縣市 *</label>
+                        <select name="deliveryCity" required value={formData.deliveryCity} onChange={handleFormChange} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors appearance-none">
+                          <option value="" disabled>請選擇配送縣市</option><option value="taipei">臺北市</option><option value="new_taipei">新北市</option><option value="other">外縣市（目前無法宅配，需配合商家時間地點自取）</option>
+                        </select>
+                        <p className="text-xs text-amberRed mt-2">* 總訂購量最低需達 50 支。訂單滿 5,000 元（不含掃帚租賃費）享免運；未滿需酌收運費 350 元。</p>
+                      </div>
+                    </div>
+
+                    {formData.eventType === 'wedding' && (
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div><label className="block text-sm font-medium text-darkWood mb-1">婚宴日期 * <span className="text-xs text-amberRed font-bold ml-1 tracking-wider">(請選西元年)</span> <span className="text-xs opacity-60 font-normal">(需14天後)</span></label><input type="date" name="weddingDate" required min={getMinDate()} value={formData.weddingDate} onChange={handleFormChange} className="w-full h-[52px] px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" /></div>
+                          <div><label className="block text-sm font-medium text-darkWood mb-1">婚宴當日收貨時間 <span className="text-xs opacity-60 font-normal">(24小時制)</span></label><select name="weddingTime" value={formData.weddingTime} onChange={handleFormChange} className="w-full h-[52px] px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors appearance-none">{renderTimeOptions()}</select></div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div><label className="block text-sm font-medium text-darkWood mb-1">婚宴餐廳名稱 *</label><input type="text" name="weddingRestaurant" required placeholder="例：OO婚宴會館" value={formData.weddingRestaurant} onChange={handleFormChange} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" /></div>
+                          <div><label className="block text-sm font-medium text-darkWood mb-1">廳別</label><input type="text" name="weddingHall" placeholder="例：鳳凰廳" value={formData.weddingHall} onChange={handleFormChange} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" /></div>
+                        </div>
+                        <div><label className="block text-sm font-medium text-darkWood mb-1">婚宴餐廳地址</label><input type="text" name="weddingAddress" placeholder="例：台北市信義區OO路123號" value={formData.weddingAddress} onChange={handleFormChange} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" /></div>
+                        <div className="bg-darkWood text-pureWhite text-center py-2.5 rounded-lg font-medium tracking-widest mt-8 shadow-sm">新人資訊</div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <input type="text" name="groomName" placeholder="新郎姓名" value={formData.groomName} onChange={handleFormChange} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" />
+                          <input type="tel" name="groomPhone" placeholder="新郎電話" value={formData.groomPhone} onChange={handleFormChange} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" />
+                          <input type="text" name="brideName" placeholder="新娘姓名" value={formData.brideName} onChange={handleFormChange} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" />
+                          <input type="tel" name="bridePhone" placeholder="新娘電話" value={formData.bridePhone} onChange={handleFormChange} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" />
+                        </div>
+                      </div>
+                    )}
+
+                    {(formData.eventType === 'school' || formData.eventType === 'other') && (
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div><label className="block text-sm font-medium text-darkWood mb-1">活動日期 * <span className="text-xs text-amberRed font-bold ml-1 tracking-wider">(請選西元年)</span> <span className="text-xs opacity-60 font-normal">(需14天後)</span></label><input type="date" name="generalDate" required min={getMinDate()} value={formData.generalDate} onChange={handleFormChange} className="w-full h-[52px] px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" /></div>
+                          <div><label className="block text-sm font-medium text-darkWood mb-1">活動當日收貨時間 <span className="text-xs opacity-60 font-normal">(24小時制)</span></label><select name="generalTime" value={formData.generalTime} onChange={handleFormChange} className="w-full h-[52px] px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors appearance-none">{renderTimeOptions()}</select></div>
+                        </div>
+                        <div><label className="block text-sm font-medium text-darkWood mb-1">活動地點名稱 *</label><input type="text" name="generalLocation" required placeholder="例：OO國小 / OO公司" value={formData.generalLocation} onChange={handleFormChange} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" /></div>
+                        <div><label className="block text-sm font-medium text-darkWood mb-1">活動完整地址</label><input type="text" name="generalAddress" placeholder="例：台北市大安區羅斯福路四段1號" value={formData.generalAddress} onChange={handleFormChange} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" /></div>
+                      </div>
+                    )}
+
+                    <div><label className="block text-sm font-medium text-darkWood mb-1">備註</label><textarea name="notes" rows="4" placeholder="若有特殊需求請在此填寫..." value={formData.notes} onChange={handleFormChange} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors resize-none"></textarea></div>
+                    <button type="submit" disabled={isSubmitting} className="w-full bg-amberRed hover:bg-darkWood disabled:bg-warmWood/50 text-white font-bold text-lg py-4 px-8 rounded-xl shadow-lg transition-all flex justify-center items-center">{isSubmitting ? "資料傳送中..." : "送出訂單"}</button>
+                  </form>
+                </section>
+              </main>
+            </div>
+          )}
+
+          {/* === 訂單查詢區塊 === */}
+          {currentPage === 'inquiry' && (
+             <div className="relative z-10 max-w-4xl mx-auto px-4 md:px-8 pt-32 pb-16 fade-in-up">
+                <header className="text-center mb-10">
+                    <h1 className="text-3xl md:text-5xl font-bold text-amberRed mb-4 tracking-wider leading-snug font-serif">訂單查詢</h1>
+                    <p className="text-darkWood/70 text-lg md:text-xl">隨時掌握您的甜蜜預約進度</p>
+                </header>
+
+                {inqStatus === 'multiple_matches' ? (
+                    <div className="bg-pureWhite/95 border border-pureWhite shadow-xl rounded-2xl p-6 md:p-10 mx-auto max-w-2xl relative overflow-hidden animate-[fadeIn_0.5s_ease-out]">
+                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-warmWood to-amberRed"></div>
+                        <h3 className="text-2xl font-bold text-darkWood mb-4 font-serif text-center">找到多筆符合的訂單</h3>
+                        <p className="text-darkWood/80 font-medium mb-8 text-center">您在同一天有多筆預約，請選擇您要查看的明細：</p>
+                        
+                        <div className="space-y-4">
+                            {inqMatches.map((order, idx) => (
+                                <div key={idx} onClick={() => {
+                                    setInqData(order);
+                                    setResendEmail(order.ordererEmail || '');
+                                    setInqStatus('success');
+                                    setIsPdfDownloaded(false); // 選擇不同訂單時重置下載狀態
+                                }} className="bg-pureWhite/80 hover:bg-white border border-warmWood/30 hover:border-amberRed cursor-pointer p-5 rounded-xl shadow-sm hover:shadow-md transition-all flex justify-between items-center group">
+                                    <div>
+                                        <p className="font-bold text-darkWood mb-1 text-lg">訂購時間：{order.orderDate} {order.orderTime}</p>
+                                        <p className="text-sm text-darkWood/70">總金額：NT$ {order.totalPrice.toLocaleString()}</p>
+                                    </div>
+                                    <div className="text-amberRed transform group-hover:translate-x-2 transition-transform">
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        <div className="mt-8 text-center border-t border-warmWood/20 pt-6">
+                            <button onClick={() => { setInqStatus('idle'); setInqName(''); setInqPhone(''); setInqDate(''); }} className="text-warmWood font-bold hover:text-darkWood transition-colors">
+                                ← 返回重新查詢
+                            </button>
+                        </div>
+                    </div>
+                ) : (inqStatus === 'idle' || inqStatus === 'loading' || inqStatus === 'error' || inqStatus === 'not_found') ? (
+                    <div className="bg-pureWhite/95 border border-pureWhite shadow-xl rounded-2xl p-6 md:p-10 mx-auto max-w-xl relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-warmWood to-amberRed"></div>
+                        <p className="text-darkWood/80 font-medium mb-8 text-center">請輸入以下三項資訊進行身分驗證，以確保您的個資安全。</p>
+                        
+                        <form onSubmit={handleInquirySubmit} className="space-y-6">
+                            <div>
+                                <label className="block text-sm font-bold text-darkWood mb-1">訂購人姓名</label>
+                                <input type="text" required value={inqName} onChange={e=>setInqName(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" placeholder="例：王大明" />
+                                <p className="text-xs text-amberRed mt-1.5">* 溫馨提示：請輸入與當初訂購時完全相同的姓名唷！</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-darkWood mb-1">訂購人手機號碼</label>
+                                <input type="tel" required value={inqPhone} onChange={e=>setInqPhone(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" placeholder="例：0912345678" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-darkWood mb-1">活動日期 <span className="text-xs text-amberRed font-bold ml-1 tracking-wider">(請選西元年)</span></label>
+                                <input type="date" required value={inqDate} onChange={e=>setInqDate(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 bg-pureWhite focus:outline-none focus:ring-2 focus:ring-amberRed transition-colors" />
+                            </div>
+                            <button type="submit" disabled={inqStatus === 'loading'} className="w-full bg-amberRed hover:bg-darkWood disabled:bg-warmWood/50 text-white font-bold text-lg py-4 rounded-xl shadow-md transition-all mt-4">
+                                {inqStatus === 'loading' ? '安全驗證與查詢中...' : '送出查詢'}
+                            </button>
+                        </form>
+
+                        {inqStatus === 'not_found' && (
+                            <div className="mt-8 bg-red-50 border border-red-200 text-amberRed p-5 rounded-xl text-sm leading-relaxed">
+                                <strong>⚠️ 找不到符合的訂單。</strong><br/><br/>請確認您的『姓名』、『手機號碼』與『活動日期』是否正確？若一直無法查詢，歡迎點擊下方按鈕聯繫 LINE 客服為您協助。
+                                <a href="https://lin.ee/5QYll8k" target="_blank" className="mt-3 block text-center bg-[#06C755] text-white py-2 rounded-lg font-bold w-full hover:bg-[#05b34c]">聯繫 LINE 客服</a>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="bg-pureWhite/95 border border-pureWhite shadow-xl rounded-3xl p-6 md:p-12 text-center animate-[fadeIn_0.5s_ease-out]">
+                        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                        </div>
+                        <h2 className="text-3xl font-bold mb-4 font-serif text-darkWood">查詢成功！</h2>
+                        <p className="text-darkWood/70 mb-8">以下為您的訂單明細紀錄。</p>
+
+                        <div className="mb-8 text-left">
+                            <OrderReceiptContent 
+                                order={{
+                                    orderNumber: inqData.orderNumber,
+                                    payload: inqData, cart: inqData.cart, candyQty: Object.entries(inqData.cart).reduce((s, [id, q]) => parseInt(id) !== 5 ? s + q : s, 0),
+                                    broomQty: inqData.cart['5'] || 0, candySubtotal: inqData.candySubtotal, broomRent: inqData.broomRent,
+                                    broomDeposit: inqData.broomDeposit, shippingFee: inqData.shippingFee, totalPrice: inqData.totalPrice
+                                }} 
+                            />
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
+                            <button onClick={() => handleDownloadPDF(inqData.pdfDownloadUrl)} className={`inline-flex items-center justify-center gap-2 text-white py-3.5 px-8 rounded-xl font-bold shadow-md transition-all w-full sm:w-auto ${isPdfDownloaded ? 'bg-[#06C755] hover:bg-[#05b34c]' : 'bg-darkWood hover:bg-[#2A1A17]'}`}>
+                                {isPdfDownloaded ? (
+                                    <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"></path></svg> 下載完成</>
+                                ) : (
+                                    <><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> 下載訂單明細 (PDF)</>
+                                )}
+                            </button>
+                            <button onClick={() => setShowEmailPrompt(!showEmailPrompt)} className="inline-flex items-center justify-center gap-2 bg-amberRed hover:bg-[#802020] text-white py-3.5 px-8 rounded-xl font-bold shadow-md transition-all w-full sm:w-auto">
+                                傳送 PDF (Email)
+                            </button>
+                        </div>
+
+                        {showEmailPrompt && (
+                            <div className="bg-creamBg border border-warmWood/30 p-6 rounded-2xl max-w-md mx-auto mb-8 animate-[fadeIn_0.3s_ease-out]">
+                                <h4 className="font-bold text-darkWood mb-3">請輸入欲接收明細的信箱：</h4>
+                                <input type="email" value={resendEmail} onChange={e=>setResendEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-warmWood/30 mb-4 focus:ring-2 focus:ring-amberRed outline-none" placeholder="example@gmail.com" />
+                                <button onClick={handleResendEmail} disabled={isResending} className="w-full bg-[#06C755] text-white font-bold py-3 rounded-xl hover:bg-[#05b34c] disabled:opacity-50">
+                                    {isResending ? "傳送中..." : "確認傳送"}
+                                </button>
+                            </div>
+                        )}
+
+                        <div className="mt-8 border-t border-warmWood/20 pt-6">
+                           {inqMatches.length > 1 ? (
+                               <button onClick={() => setInqStatus('multiple_matches')} className="text-amberRed font-bold hover:text-darkWood transition-colors">
+                                  ← 返回選擇其他訂單
+                               </button>
+                           ) : (
+                               <button onClick={() => { setInqStatus('idle'); setInqName(''); setInqPhone(''); setInqDate(''); }} className="text-amberRed font-bold hover:text-darkWood transition-colors">
+                                  ← 查詢其他訂單
+                               </button>
+                           )}
+                        </div>
+                    </div>
+                )}
+             </div>
+          )}
+
+          {/* === 訂單完成 / 成功引導頁面 === */}
+          {currentPage === 'success' && (
+            <div className="relative z-10 max-w-4xl mx-auto px-4 md:px-8 pt-32 pb-16 fade-in-up">
+              
+              <div className="bg-pureWhite/95 border border-pureWhite shadow-[0_15px_40px_-10px_rgba(165,42,42,0.1)] rounded-3xl p-6 md:p-12 text-center mb-8">
+                <div className="w-20 h-20 bg-[#06C755]/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-[#06C755]/20"><svg className="w-10 h-10 text-[#06C755]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg></div>
+                <h2 className="text-3xl md:text-4xl font-bold text-darkWood mb-4 font-serif">訂單已成功送出！</h2>
+                <p className="text-darkWood/70 text-lg mb-8">感謝您的訂購，專人將盡快與您聯繫確認訂單細節。</p>
+
+                <div className="bg-[#06C755]/10 border border-[#06C755]/30 text-[#06C755] p-4 rounded-xl text-sm font-bold mb-8 flex items-center justify-center gap-3">
+                    ✅ 訂單已成功寫入系統！{submittedOrder?.payload?.ordererEmail ? '明細已自動寄送至您的信箱。' : '您可以點擊下方按鈕下載 PDF 留存。'}
+                </div>
+              </div>
+
+              {submittedOrder && (
+                <div className="mb-8">
+                  <OrderReceiptContent order={submittedOrder} />
+                  <div className="flex justify-center mb-8">
+                    <button onClick={() => handleDownloadPDF(submittedOrder.pdfDownloadUrl)} className={`inline-flex items-center justify-center gap-2 text-white py-3.5 px-8 rounded-xl font-bold shadow-md transition-all w-full sm:w-auto ${isPdfDownloaded ? 'bg-[#06C755] hover:bg-[#05b34c]' : 'bg-darkWood hover:bg-[#2A1A17]'}`}>
+                        {isPdfDownloaded ? (
+                            <><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"></path></svg> 下載完成</>
+                        ) : (
+                            <><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> 下載訂單明細 (PDF)</>
+                        )}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <hr className="border-warmWood/30 mb-8" />
+              <div className="bg-gradient-to-br from-[#FFF8F8] to-pureWhite border border-amberRed/20 rounded-2xl p-6 md:p-8 text-left shadow-[0_8px_24px_rgba(165,42,42,0.05)] mb-8 relative overflow-hidden">
+                <div className="absolute -right-8 -top-8 text-amberRed opacity-5 rotate-12 pointer-events-none"><svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 24 24" fill="currentColor"><path d="M12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5m7.5-9h-2.5l-2-2h-6l-2 2h-2.5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2v-10c0-1.1-.9-2-2-2m-7.5 13c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg></div>
+                <div className="relative z-10">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-amberRed/10 text-amberRed text-xs font-bold rounded-full tracking-widest mb-4 border border-amberRed/20">✨ 完成訂單特惠獨享</div>
+                  <h3 className="text-2xl font-bold text-darkWood mb-4 font-serif">【LINE 照片募集】分享甜蜜時刻</h3>
+                  <p className="text-darkWood/80 text-sm md:text-base leading-relaxed mb-6">那一場盛宴中，糖葫蘆的紅豔與甜脆，是否為您留下了美好印象？<br className="hidden md:block" />我們正在募集那些隱藏在大家手機裡的精彩瞬間！<br className="hidden md:block" />不論是小朋友開心的笑臉，還是精緻的擺設特寫，只要您願意與我們分享這份甜蜜，我們就請您吃最道地的寧夏夜市糖葫蘆。</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-pureWhite/80 backdrop-blur-sm p-5 rounded-xl border border-warmWood/30 shadow-sm flex flex-col gap-2"><h4 className="font-bold text-darkWood flex items-center gap-2 text-base"><span className="text-2xl">📸</span> 募集任務</h4><p className="text-sm text-darkWood/70 leading-relaxed mt-1">上傳 <span className="font-bold text-amberRed">5-10 張</span> 活動/婚宴現場清晰糖葫蘆照片至 LINE 官方帳號。</p></div>
+                    <div className="bg-pureWhite/80 backdrop-blur-sm p-5 rounded-xl border border-warmWood/30 shadow-sm flex flex-col gap-2"><h4 className="font-bold text-darkWood flex items-center gap-2 text-base"><span className="text-2xl">🎁</span> 任務獎勵</h4><p className="text-sm text-darkWood/70 leading-relaxed mt-1">官方回覆確認後，憑訊息至「寧夏夜市攤位」：<br/>👉 免費兌換 <span className="font-bold text-amberRed text-lg">5 支</span> 糖葫蘆！<br/><span className="text-xs opacity-70 block mt-1">【40 元（含）以下品項，口味任選】</span></p></div>
+                  </div>
+
+                  {/* 照片授權聲明 (風琴夾設計) */}
+                  <div className={`mt-6 rounded-xl bg-white/60 overflow-hidden transition-all duration-300 ${isTermsOpen ? 'border border-amberRed/30 shadow-sm' : 'border-2 border-amberRed shadow-[0_0_15px_rgba(165,42,42,0.3)]'}`}>
+                    <button
+                      onClick={() => setIsTermsOpen(!isTermsOpen)}
+                      className={`w-full px-4 md:px-5 py-4 flex justify-between items-center transition-colors text-left ${isTermsOpen ? 'bg-amberRed/5 hover:bg-amberRed/10' : 'bg-gradient-to-r from-amberRed to-[#802020] hover:from-[#802020] hover:to-amberRed'}`}
+                    >
+                      <span className={`font-bold flex items-center gap-2 text-[13px] md:text-sm tracking-wide ${isTermsOpen ? 'text-amberRed' : 'text-white'}`}>
+                        <svg className="w-5 h-5 shrink-0 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                        <span className={isTermsOpen ? '' : 'animate-pulse'}>👉 參加【LINE 照片募集】活動前，請先花一分鐘閱讀《照片使用授權聲明》</span>
+                      </span>
+                      <svg className={`w-5 h-5 shrink-0 transform transition-transform duration-300 ${isTermsOpen ? 'rotate-180 text-amberRed' : 'text-white'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    
+                    <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isTermsOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                      <div className="p-5 text-sm text-darkWood/80 text-left space-y-5 border-t border-amberRed/20 bg-white/90">
+                          <p className="font-medium text-darkWood leading-relaxed">感謝您參與李伯伯糖葫蘆的照片募集活動！為了將您珍貴的甜蜜畫面與更多朋友分享，並保障您的相關權益，請在參與活動前詳閱以下授權聲明：</p>
+                          
+                          <div>
+                              <h4 className="font-bold text-[#802020] mb-2">一、 授權內容與用途</h4>
+                              <p className="mb-2 leading-relaxed">您同意將本次提供給本品牌（冰糖璃工作室）之所有照片（以下稱「授權照片」），無償且非專屬授權予本品牌使用。本品牌得將授權照片用於官方網站、社群媒體（包含但不限於 Facebook、Instagram、LINE 官方帳號等）及實體宣傳物，進行以下用途：</p>
+                              <ul className="list-disc pl-5 space-y-1 text-darkWood/70 leading-relaxed">
+                                  <li><strong className="text-darkWood/90 font-medium">活動宣傳：</strong>未來相關檔期與活動之推廣。</li>
+                                  <li><strong className="text-darkWood/90 font-medium">產品行銷：</strong>糖葫蘆產品、婚禮喜糖、掃帚租借等服務之視覺素材。</li>
+                                  <li><strong className="text-darkWood/90 font-medium">成果呈現：</strong>品牌歷程紀錄與活動精華分享。</li>
+                              </ul>
+                          </div>
+                          
+                          <div>
+                              <h4 className="font-bold text-[#802020] mb-2">二、 授權權利與方式</h4>
+                              <ul className="list-disc pl-5 space-y-1 text-darkWood/70 leading-relaxed">
+                                  <li>您同意本品牌在上述用途範圍內，擁有對授權照片進行重製、公開傳輸、公開播送、公開展示之權利。</li>
+                                  <li>為配合各平台版面配置與品牌視覺，本品牌得對授權照片進行合理之改作（包含但不限於裁切、調整色調、添加品牌 Logo 或活動排版文字）。</li>
+                                  <li>本授權為全球性、無期限且無償之授權。本品牌承諾照片僅作前述品牌營運行銷用途，絕不將照片單獨作為商品進行販售。</li>
+                              </ul>
+                          </div>
+
+                          <div>
+                              <h4 className="font-bold text-[#802020] mb-2">三、 權利擔保與肖像權</h4>
+                              <ul className="list-disc pl-5 space-y-1 text-darkWood/70 leading-relaxed">
+                                  <li>您聲明並保證您是授權照片的合法著作權人，或已取得著作權人之合法同意。</li>
+                                  <li>若授權照片中包含您以外之他人清晰面貌（例如：親友、婚宴賓客），請務必確認已取得該當事人之「肖像權使用同意」。</li>
+                                  <li>若因照片內容引發著作權或肖像權等侵權爭議，將由提供照片之參加者自行承擔相關法律責任，概與本品牌無涉。</li>
+                              </ul>
+                          </div>
+
+                          <div>
+                              <h4 className="font-bold text-[#802020] mb-2">四、 隱私與退出機制</h4>
+                              <p className="leading-relaxed">本品牌十分珍視您的心意。若您未來改變心意，不希望照片繼續在官方平台上公開展示，可隨時透過 LINE 官方帳號聯繫我們，本品牌將於合理作業時間內將您的照片從官方經營之數位平台上移除。</p>
+                          </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p className="text-darkWood/80 text-base mb-6"><span className="text-amberRed font-bold inline-block">請務必加入 LINE 官方帳號留言，以利後續聯繫與確認訂單唷！</span></p>
+              <div className="bg-gradient-to-br from-creamBg to-warmWood/30 border border-warmWood/50 rounded-2xl p-6 md:p-8 max-w-md mx-auto shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 bg-[#06C755] text-white text-[10px] md:text-xs font-bold px-3 py-1 rounded-bl-lg tracking-widest">好友限定</div>
+                <h3 className="text-xl md:text-2xl font-bold text-amberRed mb-2 tracking-wide font-serif">🎁 加入 LINE 官方帳號</h3>
+                <p className="text-darkWood/80 font-medium mb-6">立刻領取專屬優惠券！</p>
+                <img src="https://qr-official.line.me/gs/M_687vjdlz_GW.png?oat_content=qr" alt="李伯伯糖葫蘆 LINE 官方帳號 QR Code" className="w-40 h-40 md:w-48 md:h-48 object-contain mx-auto mb-6 bg-pureWhite p-2 rounded-xl shadow-sm border border-pureWhite/50" loading="lazy" decoding="async"/>
+                <a href="https://lin.ee/5QYll8k" target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-2 w-full bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-lg py-3.5 px-6 rounded-xl shadow-md transition-transform hover:-translate-y-1"><svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M24 10.304c0-5.369-5.383-9.738-12-9.738-6.616 0-12 4.369-12 9.738 0 4.814 4.269 8.846 10.036 9.608.391.084.922.25..."></path></svg>點此加入好友</a>
+              </div>
+              <div className="mt-10"><button onClick={() => handleNavigate('list')} className="text-warmWood font-bold hover:text-amberRed transition-colors flex items-center justify-center gap-2 mx-auto tracking-widest">← 返回選購繼續逛逛</button></div>
+            </div>
+          )}
+
+          <Footer />
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
